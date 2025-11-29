@@ -46,7 +46,7 @@ const AnimatedBoxLoader: React.FC<AnimatedBoxLoaderProps> = ({
           className={cn(
             "absolute inset-0 w-full h-full object-cover",
             "-rotate-45",
-            "scale-[1.15]" // zoomed in
+            "scale-[1.25]" // zoomed in
           )}
         />
       </div>
