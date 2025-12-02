@@ -25,7 +25,7 @@ const Index = () => {
 
   const heroCards = [
     {
-      backgroundImage: "https://scribblesense.co.uk/assets/img/slider/slide-01.jpg",
+      backgroundImage: "mainBanner.png",
       // badge: "🎨 Empowering Children with Dysgraphia",
       title: (
         <>
@@ -48,7 +48,7 @@ const Index = () => {
         "Personalised guidance to help children overcome handwriting challenges and thrive academically.",
     },
     {
-      backgroundImage: "https://scribblesense.co.uk/assets/img/slider/slide-03.jpg",
+      backgroundImage: "/main2ndBanner.jpg",
       title: (
         <span className="bg-gradient-purple bg-clip-text text-transparent">
           Transforming Handwriting Struggles into Strengths, One Child at a Time
