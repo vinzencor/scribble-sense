@@ -26,36 +26,36 @@ const Index = () => {
   const heroCards = [
     {
       backgroundImage: "https://scribblesense.co.uk/assets/img/slider/slide-01.jpg",
-      badge: "🎨 Empowering Children with Dysgraphia",
+      // badge: "🎨 Empowering Children with Dysgraphia",
       title: (
         <>
-          <span className="text-white">ScribbleSense's Path</span>
+          <span className="text-white">Empowering Children</span>
           <br />
-          <span className="bg-gradient-pink bg-clip-text text-transparent">to Progress</span>
+          <span className="bg-gradient-pink bg-clip-text text-transparent">to Write with Confidence</span>
         </>
       ),
       description:
-        "Dedicated to tackling dysgraphia challenges, ScribbleSense focuses on empowering children and families through comprehensive support and resources.",
+        "Expert dysgraphia support and handwriting development that builds clarity, confidence, and skill.",
     },
     {
       backgroundImage: "https://scribblesense.co.uk/assets/img/slider/slide-02.jpg",
       title: (
         <span className="bg-gradient-pink bg-clip-text text-transparent">
-          Empowering Families, Nurturing Children
+          Where Learning Differences Get the Right Support
         </span>
       ),
       description:
-        "ScribbleSense can effectively empower families and nurture children affected by dysgraphia, promoting their holistic well-being and educational success.",
+        "Personalised guidance to help children overcome handwriting challenges and thrive academically.",
     },
     {
       backgroundImage: "https://scribblesense.co.uk/assets/img/slider/slide-03.jpg",
       title: (
         <span className="bg-gradient-purple bg-clip-text text-transparent">
-          Helping Kids Conquer Writing Challenges
+          Transforming Handwriting Struggles into Strengths, One Child at a Time
         </span>
       ),
       description:
-        "Providing tailored solutions for diverse handwriting difficulties to meet each child's unique needs.",
+        "Research-backed handwriting improvement programs that nurture progress, confidence, and independence.",
     },
   ];
   const mediaItems = [
@@ -168,7 +168,7 @@ const Index = () => {
       <Navigation />
 
       {/* Hero Section - GSAP Stacked Cards */}
-      <GSAPStackedCards cards={heroCards} />
+      <GSAPStackedCards cards={heroCards} />/
 
       {/* Features Section */}
       <section className="py-20 bg-muted/30">
@@ -181,11 +181,14 @@ const Index = () => {
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-gradient-cyan bg-clip-text text-transparent">
-                Welcome to ScribbleSense
+                Rewriting Possibilities for Every Child
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              At ScribbleSense, we’re dedicated to transforming the lives of children with Learning Differences. Our mission is to offer the support and resources they need to excel both academically and personally. We’re here to empower every child with the tools and confidence to thrive, making their journey smoother and brighter. Let’s unlock their full potential together!
+              At ScribbleSense, we support children who struggle with dysgraphia and handwriting challenges.
+              Through personalised guidance, engaging methods, and expert-led strategies, we build confidence step by step.
+              We work closely with families to make learning smoother, happier, and stress-free.
+              Because every child deserves the chance to write with clarity, comfort, and pride.
             </p>
           </motion.div>
 
@@ -193,8 +196,8 @@ const Index = () => {
             {[
               {
                 icon: <PenTool className="w-12 h-12" />,
-                title: "Empowerment",
-                desc: "We empower families and children with the tools, resources, and knowledge needed to confidently navigate the complexities of dysgraphia. Our support helps build a strong foundation for success through understanding and effective strategies.",
+                title: "Empower",
+                desc: "We equip children and families with the right tools, resources, and guidance to confidently navigate dysgraphia. Through understanding and practical strategies, we help build a strong foundation for long-term success.",
                 gradient: "gradient-pink",
               },
               {
@@ -258,11 +261,11 @@ const Index = () => {
             </span>
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-gradient-purple bg-clip-text text-transparent">
-                Helping Children Write
+                Empowering Children
               </span>
               <br />
               <span className="bg-gradient-pink bg-clip-text text-transparent">
-                With Confidence
+                Through Expert Support
               </span>
             </h2>
           </motion.div>
@@ -277,11 +280,7 @@ const Index = () => {
               className="space-y-6"
             >
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-                ScribbleSense is a pioneering initiative dedicated to helping children
-                overcome the challenges of dysgraphia, with a strong focus on
-                handwriting development. We provide comprehensive support and
-                resources to empower children and their families, ensuring they gain
-                the confidence and skills needed to succeed.
+                ScribbleSense is dedicated to helping children overcome dysgraphia and handwriting challenges through compassionate guidance and research-backed methods. We work closely with families to build confidence, improve skills, and create a smoother, happier learning journey. With personalised support and thoughtful strategies, we help every child move forward with clarity, comfort, and pride.
               </p>
 
               <div className="grid sm:grid-cols-2 gap-4 mt-4">
@@ -290,8 +289,7 @@ const Index = () => {
                     Child-Centered Design
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Every activity is crafted with children&apos;s needs, attention
-                    span, and motivation at heart.
+                    Every program is thoughtfully created to match each child’s pace, needs, and learning style.
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-card/80 border border-border shadow-sm">
@@ -299,8 +297,7 @@ const Index = () => {
                     Support for Families
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Parents and caregivers get tools and guidance to support progress
-                    beyond the screen.
+                    We guide parents with practical tools and insights, making the entire learning journey smoother and stress-free.
                   </p>
                 </div>
               </div>
@@ -365,7 +362,7 @@ const Index = () => {
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Experience interactive learning activities designed to help children master writing skills
+              Play, learn, and grow through games made to support handwriting and dysgraphia development.
             </p>
           </motion.div>
 
@@ -402,12 +399,12 @@ const Index = () => {
       </section>
 
       {/* image part */}
-      <section className="py-16 bg-gradient-to-b from-white via-sky-50 to-white dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+      <section className="py-16 bg-gradient-to-b from-white via-sky-50 to-white dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 mb-5 pt-5">
         <div className="max-w-6xl mx-auto px-4">
           <InteractiveBentoGallery
             mediaItems={mediaItems}
             title="Children’s Illustration & Moments Gallery"
-            description="Drag and explore a playful collection of children’s illustrations and joyful childhood moments."
+            description="A joyful showcase of children’s creativity, growth, and unforgettable learning moments."
           />
         </div>
       </section>
@@ -425,14 +422,14 @@ const Index = () => {
         <img
           src={appInterface}
           alt="ScribbleSense app interface showing interactive learning activities"
-          className="mx-auto rounded-2xl object-cover h-full w-full"
+          className="mx-auto rounded-2xl object-cover h-full w-full "
           draggable={false}
         />
       </ContainerScroll>
 
       <ContainerScroll
         titleComponent={
-          <h2 className="text-4xl md:text-5xl font-bold mt-2 bg-gradient-cyan bg-clip-text pt-36 text-transparent">
+          <h2 className="text-4xl md:text-5xl font-bold mt-2 bg-gradient-cyan bg-clip-text pt-36 text-transparent mt-24">
             Supporting Families Every Step Building Confidence Together
             <br />
             <span className="">
@@ -451,7 +448,7 @@ const Index = () => {
       </ContainerScroll>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10">
+      <section className="py-20 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 mt-20">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
