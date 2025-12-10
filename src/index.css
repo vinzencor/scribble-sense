@@ -223,3 +223,56 @@ All colors MUST be HSL.
     transform: translateY(-20px);
   }
 }
+
+/* FlipBook Animations */
+@keyframes page-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(-180deg);
+  }
+}
+
+@keyframes page-flip-reverse {
+  0% {
+    transform: rotateY(-180deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+.book-cover {
+  perspective: 1200px;
+}
+
+.book {
+  transform-style: preserve-3d;
+}
+
+.book-page-right {
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.book-page-right:hover:not(.animate-page-flip) {
+  transform: rotateY(-10deg);
+}
+
+.animate-page-flip {
+  animation: page-flip 0.6s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+}
+
+.animate-page-flip-reverse {
+  animation: page-flip-reverse 0.6s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+}
+
+.flip-book-shadow {
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.3);
+}
