@@ -45,7 +45,7 @@ const Index = () => {
 
   const heroCards = [
     {
-      backgroundImage: "mainBanner.png",
+      backgroundVideo: "/headerVideo.mp4",
       // badge: "🎨 Empowering Children with Dysgraphia",
       title: (
         <>
@@ -256,7 +256,7 @@ const Index = () => {
 
                 <div className="relative rounded-3xl overflow-hidden border border-border bg-card shadow-xl">
                   <img
-                    src="/Hand.JPG"
+                    src="/Hand.jpg"
                     alt="About ScribbleSense – child learning with support"
                     className="w-full h-full object-cover"
                   />

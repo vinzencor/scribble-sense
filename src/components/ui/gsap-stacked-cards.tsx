@@ -10,7 +10,8 @@ import AstraButton from "./astra-button";
 gsap.registerPlugin(ScrollTrigger);
 
 interface CardData {
-  backgroundImage: string;
+  backgroundImage?: string;
+  backgroundVideo?: string;
   badge?: string;
   title: React.ReactNode;
   description: string;
@@ -69,13 +70,30 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
           key={index}
           ref={(el) => { cardsRef.current[index] = el; }}
           className="relative min-h-screen flex items-center justify-center overflow-hidden"
-          style={{
-            backgroundImage: `url('${card.backgroundImage}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
+          style={
+            card.backgroundImage
+              ? {
+                  backgroundImage: `url('${card.backgroundImage}')`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                }
+              : {}
+          }
         >
+          {card.backgroundVideo && (
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover object-right"
+              style={{ objectPosition: "right center" }}
+            >
+              <source src={card.backgroundVideo} type="video/mp4" />
+            </video>
+          )}
+          
           <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/50 to-black/40" />
 
           <div className="container mx-auto px-4 py-20 relative z-10">
