@@ -13,14 +13,34 @@ import appInterface from "@/assets/app-interface.jpg";
 import familySupport from "@/assets/family-support.jpg";
 import { BookOpen, PenTool, Heart, Sparkles } from "lucide-react";
 import InteractiveBentoGallery from "@/components/ui/interactive-bento-gallery";
+import { getGalleryImages, GalleryImage } from "@/lib/supabase";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
 
   useEffect(() => {
-    // Show loader for 2 seconds
-    const timer = setTimeout(() => setIsLoading(false), 2000);
-    return () => clearTimeout(timer);
+    // Show loader and fetch gallery images
+    const initializeData = async () => {
+      const { data } = await getGalleryImages();
+      if (data && data.length > 0) {
+        // Transform Supabase data to match the gallery format
+        const transformedImages = data.map((img: GalleryImage) => ({
+          id: img.id,
+          type: "image" as const,
+          title: img.title,
+          desc: img.description,
+          url: img.image_url,
+          span: img.span,
+        }));
+        setGalleryImages(transformedImages);
+      }
+      
+      // Show loader for at least 2 seconds
+      setTimeout(() => setIsLoading(false), 2000);
+    };
+    
+    initializeData();
   }, []);
 
   const heroCards = [
@@ -58,91 +78,6 @@ const Index = () => {
         "Research-backed handwriting improvement programs that nurture progress, confidence, and independence.",
     },
   ];
-  const mediaItems = [
-    // --- Your provided children illustrations ---
-    {
-      id: 1,
-      type: "image" as const,
-      title: "Playful Kids 1",
-      desc: "Colorful creative character illustration.",
-      url: "https://scribblesense.co.uk/assets/img/portfolio/creativeZipp/creative/Untitled-3.jpg",
-      span: "md:col-span-1 md:row-span-3 sm:col-span-1 sm:row-span-2",
-    },
-    {
-      id: 2,
-      type: "image" as const,
-      title: "Imaginative Storytime",
-      desc: "Illustrated child enjoying a magical story.",
-      url: "https://scribblesense.co.uk/assets/img/portfolio/illustrateZipp/illustrate/Untitled-5.jpg",
-      span: "md:col-span-2 md:row-span-2 col-span-1 sm:col-span-2 sm:row-span-2",
-    },
-    {
-      id: 3,
-      type: "image" as const,
-      title: "Curious Child",
-      desc: "Creative character sketch with bright colors.",
-      url: "https://scribblesense.co.uk/assets/img/portfolio/creativeZipp/creative/Untitled-2.jpg",
-      span: "md:col-span-1 md:row-span-3 sm:col-span-2 sm:row-span-2",
-    },
-    {
-      id: 4,
-      type: "image" as const,
-      title: "Reading Time",
-      desc: "Child illustration with books and stars.",
-      url: "https://scribblesense.co.uk/assets/img/portfolio/creativeZipp/creative/Untitled-1.jpg",
-      span: "md:col-span-2 md:row-span-2 sm:col-span-1 sm:row-span-2",
-    },
-    {
-      id: 5,
-      type: "image" as const,
-      title: "Happy Character",
-      desc: "Cheerful kid with playful shapes.",
-      url: "https://scribblesense.co.uk/assets/img/portfolio/creativeZipp/creative/Untitled-4.jpg",
-      span: "md:col-span-1 md:row-span-3 sm:col-span-1 sm:row-span-2",
-    },
-    {
-      id: 6,
-      type: "image" as const,
-      title: "Friendly Friend",
-      desc: "Illustrated buddy full of personality.",
-      url: "https://scribblesense.co.uk/assets/img/portfolio/illustrateZipp/illustrate/Untitled-4.jpg",
-      span: "md:col-span-2 md:row-span-2 sm:col-span-1 sm:row-span-2",
-    },
-
-    // --- Additional children-themed stock images (examples) ---
-    {
-      id: 7,
-      type: "image" as const,
-      title: "Kids Playing Outdoors",
-      desc: "Children running and playing together in the park.",
-      url: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9",
-      span: "md:col-span-1 md:row-span-2 sm:col-span-1 sm:row-span-2",
-    },
-    {
-      id: 8,
-      type: "image" as const,
-      title: "Art Class Fun",
-      desc: "A child covered in paint while creating art.",
-      url: "https://images.unsplash.com/photo-1508948956644-0017e845d797",
-      span: "md:col-span-2 md:row-span-2 sm:col-span-2 sm:row-span-2",
-    },
-    {
-      id: 9,
-      type: "image" as const,
-      title: "Reading Adventure",
-      desc: "Little girl reading a book full of magic and wonder.",
-      url: "https://images.unsplash.com/photo-1516528387618-afa90b13e000",
-      span: "md:col-span-1 md:row-span-3 sm:col-span-1 sm:row-span-2",
-    },
-    {
-      id: 10,
-      type: "image" as const,
-      title: "Smiling Friends",
-      desc: "A group of children smiling and posing together.",
-      url: "https://images.unsplash.com/photo-1503457574462-bd27054394c1",
-      span: "md:col-span-2 md:row-span-2 sm:col-span-2 sm:row-span-2",
-    },
-  ]
 
   if (isLoading) {
     return (
@@ -321,7 +256,7 @@ const Index = () => {
 
                 <div className="relative rounded-3xl overflow-hidden border border-border bg-card shadow-xl">
                   <img
-                    src="https://scribblesense.co.uk/assets/img/about/about.png"
+                    src="/Hand.JPG"
                     alt="About ScribbleSense – child learning with support"
                     className="w-full h-full object-cover"
                   />
@@ -402,7 +337,7 @@ const Index = () => {
       <section className="py-16 bg-gradient-to-b from-white via-sky-50 to-white dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 mb-5 pt-5">
         <div className="max-w-6xl mx-auto px-4">
           <InteractiveBentoGallery
-            mediaItems={mediaItems}
+            mediaItems={galleryImages}
             title="Children’s Illustration & Moments Gallery"
             description="A joyful showcase of children’s creativity, growth, and unforgettable learning moments."
           />

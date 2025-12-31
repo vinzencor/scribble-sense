@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import AnimatedDownloadButton from "@/components/ui/download-hover-button"
 import Navigation from "@/components/Navigation"
 import MouseSpark from "@/components/ui/mouse-spark"
 import FlipBook from "@/components/ui/flip-book"
-import { BookOpen } from "lucide-react"
+import { BookOpen, Loader2 } from "lucide-react"
+import { getResources, getWorkbooks, Resource, Workbook } from "@/lib/supabase"
 
 type ResourceItem = {
-  id: number
+  id: string | number
   title: string
   fileUrl: string
 }
@@ -22,7 +23,7 @@ type WorkbookItem = {
   description: string
 }
 
-const RESOURCES: ResourceItem[] = [
+const FALLBACK_RESOURCES: ResourceItem[] = [
   {
     id: 1,
     title: "Deliver Therapeutic Strategies",
@@ -50,7 +51,7 @@ const RESOURCES: ResourceItem[] = [
   },
 ]
 
-const WORKBOOKS: WorkbookItem[] = [
+const FALLBACK_WORKBOOKS: WorkbookItem[] = [
   {
     id: "curve-line-tracing",
     title: "Curve Line Tracing",
@@ -100,6 +101,39 @@ const rowVariants = {
 
 export default function ResourcesPage() {
   const [activeWorkbook, setActiveWorkbook] = useState<WorkbookItem | null>(null)
+  const [resources, setResources] = useState<ResourceItem[]>(FALLBACK_RESOURCES)
+  const [workbooks, setWorkbooks] = useState<WorkbookItem[]>(FALLBACK_WORKBOOKS)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [resourcesRes, workbooksRes] = await Promise.all([
+        getResources(),
+        getWorkbooks()
+      ])
+
+      if (resourcesRes.data && resourcesRes.data.length > 0) {
+        setResources(resourcesRes.data.map((r: Resource) => ({
+          id: r.id,
+          title: r.title,
+          fileUrl: r.file_url,
+        })))
+      }
+
+      if (workbooksRes.data && workbooksRes.data.length > 0) {
+        setWorkbooks(workbooksRes.data.map((w: Workbook) => ({
+          id: w.id,
+          title: w.title,
+          pdfUrl: w.pdf_url,
+          coverImage: w.cover_image_url,
+          description: w.description,
+        })))
+      }
+
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
 
   return (
     <main className="bg-white min-h-screen">
@@ -168,7 +202,7 @@ export default function ResourcesPage() {
             viewport={{ once: true, amount: 0.3 }}
             className="space-y-4"
           >
-            {RESOURCES.map((resource) => (
+            {resources.map((resource) => (
               <motion.div
                 key={resource.id}
                 variants={rowVariants}
@@ -222,7 +256,7 @@ export default function ResourcesPage() {
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6, staggerChildren: 0.1 }}
           >
-            {WORKBOOKS.map((workbook, index) => (
+            {workbooks.map((workbook, index) => (
               <motion.div
                 key={workbook.id}
                 className="relative cursor-pointer group"

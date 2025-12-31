@@ -1,18 +1,21 @@
 "use client"
 
 import { motion } from "framer-motion"
-import React from "react"
+import { useEffect, useState } from "react"
 import Navigation from "@/components/Navigation"
 import MouseSpark from "@/components/ui/mouse-spark"
+import { getServices, Service as SupabaseService } from "@/lib/supabase"
+import { Loader2 } from "lucide-react"
 
 type Service = {
-  id: number
+  id: string | number
   title: string
   description: string
   imageUrl: string
 }
 
-const SERVICES: Service[] = [
+// Fallback services for when database is empty
+const FALLBACK_SERVICES: Service[] = [
   {
     id: 1,
     title: "Dysgraphia Diagnosis & Treatment",
@@ -100,6 +103,25 @@ function ServiceCard({ service }: { service: Service }) {
 }
 
 export default function ServicesPage() {
+  const [services, setServices] = useState<Service[]>(FALLBACK_SERVICES)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      const { data, error } = await getServices()
+      if (data && data.length > 0) {
+        setServices(data.map((s: SupabaseService) => ({
+          id: s.id,
+          title: s.title,
+          description: s.description,
+          imageUrl: s.image_url,
+        })))
+      }
+      setLoading(false)
+    }
+    fetchServices()
+  }, [])
+
   return (
     <main className="bg-white min-h-screen">
       <MouseSpark />
@@ -157,27 +179,23 @@ export default function ServicesPage() {
       {/* Services grid */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto max-w-6xl px-4">
-          <motion.div
-            className="text-center mb-12 md:mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.6 }}
-          >
-           
-          </motion.div>
-
-          <motion.div
-            className="grid gap-8 md:gap-10 md:grid-cols-3"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-          >
-            {SERVICES.map((service) => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
-          </motion.div>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-[#382467]" />
+            </div>
+          ) : (
+            <motion.div
+              className="grid gap-8 md:gap-10 md:grid-cols-3"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+            >
+              {services.map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </motion.div>
+          )}
         </div>
       </section>
     </main>
