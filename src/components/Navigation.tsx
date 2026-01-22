@@ -51,7 +51,7 @@ export default function Navigation() {
           {/* Logo FIRST */}
           <NavLink to="/" className="flex items-center justify-center">
             <img
-              src="https://scribblesense.co.uk/assets/img/logo/logo1.png"
+              src="/Scruibblelogo-removebg-preview.png"
               alt="ScribbleSense Logo"
               className={`transition-all duration-300 ${
                 isScrolled ? "h-8 w-auto" : "h-10 w-auto"

@@ -29,10 +29,10 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
     if (!containerRef.current) return;
 
     const cardElements = cardsRef.current.filter(Boolean) as HTMLDivElement[];
-    
+
     cardElements.forEach((card, index) => {
       const isLast = index === cardElements.length - 1;
-      
+
       ScrollTrigger.create({
         trigger: card,
         start: "top top",
@@ -73,11 +73,11 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
           style={
             card.backgroundImage
               ? {
-                  backgroundImage: `url('${card.backgroundImage}')`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                }
+                backgroundImage: `url('${card.backgroundImage}')`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }
               : {}
           }
         >
@@ -93,7 +93,7 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
               <source src={card.backgroundVideo} type="video/mp4" />
             </video>
           )}
-          
+
           <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/50 to-black/40" />
 
           <div className="container mx-auto px-4 py-20 relative z-10">
@@ -132,7 +132,7 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
                   onClick={() =>
                     document.getElementById("games")?.scrollIntoView({ behavior: "smooth" })
                   }
-                  className="text-lg"
+                  className="text-lg text-white"
                 />
               </div>
             </motion.div>

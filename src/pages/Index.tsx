@@ -231,6 +231,7 @@ const Index = () => {
                   <p className="text-sm font-semibold text-primary mb-1">
                     Support for Families
                   </p>
+    
                   <p className="text-sm text-muted-foreground">
                     We guide parents with practical tools and insights, making the entire learning journey smoother and stress-free.
                   </p>
