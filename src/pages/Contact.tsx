@@ -11,7 +11,7 @@ const Contact = () => {
       <MouseSpark />
       <Navigation />
 
-      <section className="py-20 pt-32">
+      <section className="py-4\ pt-56">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

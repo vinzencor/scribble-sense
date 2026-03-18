@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,21 +9,51 @@ import { toast } from "sonner";
 
 export default function CloudWatchForm() {
   const [isTyping, setIsTyping] = useState(false);
-  const [cursor, setCursor] = useState({ x: 0, y: 0 });
   const [eyePos, setEyePos] = useState({ x: 0, y: 0 });
   const [blink, setBlink] = useState(false);
+  const cloudRef = useRef<HTMLDivElement | null>(null);
+  const targetEyePos = useRef({ x: 0, y: 0 });
+  const rafRef = useRef<number | null>(null);
+
+  const MAX_PUPIL_X = 8;
+  const MAX_PUPIL_Y = 5;
 
   useEffect(() => {
-    const handleMouse = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY });
-    window.addEventListener("mousemove", handleMouse);
-    return () => window.removeEventListener("mousemove", handleMouse);
+    const handleMouse = (e: PointerEvent) => {
+      if (!cloudRef.current) return;
+
+      const rect = cloudRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const normalizedX = (e.clientX - centerX) / (rect.width / 2);
+      const normalizedY = (e.clientY - centerY) / (rect.height / 2);
+
+      targetEyePos.current = {
+        x: Math.max(-1, Math.min(1, normalizedX)) * MAX_PUPIL_X,
+        y: Math.max(-1, Math.min(1, normalizedY)) * MAX_PUPIL_Y,
+      };
+    };
+
+    window.addEventListener("pointermove", handleMouse);
+
+    const animateEyes = () => {
+      setEyePos((prev) => ({
+        x: prev.x + (targetEyePos.current.x - prev.x) * 0.35,
+        y: prev.y + (targetEyePos.current.y - prev.y) * 0.35,
+      }));
+      rafRef.current = window.requestAnimationFrame(animateEyes);
+    };
+
+    animateEyes();
+
+    return () => {
+      window.removeEventListener("pointermove", handleMouse);
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
+    };
   }, []);
-
-  useEffect(() => {
-    const offsetX = ((cursor.x / window.innerWidth) - 0.5) * 40;
-    const offsetY = ((cursor.y / window.innerHeight) - 0.5) * 20;
-    setEyePos({ x: offsetX, y: offsetY });
-  }, [cursor]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -43,7 +73,7 @@ export default function CloudWatchForm() {
       <div className="bg-card/80 backdrop-blur-md rounded-3xl shadow-purple border-2 border-accent/20 p-8 flex flex-col items-center gap-6">
         
         {/* Cloud Character */}
-        <div className="relative w-60 h-32">
+        <div ref={cloudRef} className="relative w-60 h-32">
           <div className="absolute inset-0 bg-gradient-cyan rounded-full blur-2xl opacity-30 animate-pulse" />
           <svg viewBox="0 0 200 100" className="w-full h-full">
             {/* Cloud shape */}
@@ -64,11 +94,11 @@ export default function CloudWatchForm() {
                 />
                 {!isTyping && !blink && (
                   <circle
-                    cx={idx === 0 ? 75 + eyePos.x / 4 : 125 + eyePos.x / 4}
-                    cy={58}
+                    cx={idx === 0 ? 75 + eyePos.x : 125 + eyePos.x}
+                    cy={58 + eyePos.y}
                     r={6}
                     fill="#1a1a1a"
-                    style={{ transition: "all 0.1s ease" }}
+                    style={{ transition: "all 0.05s linear" }}
                   />
                 )}
               </g>

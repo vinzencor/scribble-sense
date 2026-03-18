@@ -10,6 +10,12 @@ const MouseSpark: React.FC<MouseSparkProps> = ({ theme = "light" }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    if (prefersReducedMotion || isCoarsePointer) {
+      return;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -35,6 +41,9 @@ const MouseSpark: React.FC<MouseSparkProps> = ({ theme = "light" }) => {
       color: string;
       life: number;
     }[] = [];
+    const maxParticles = 120;
+    let rafId = 0;
+    let pendingPoint: { x: number; y: number } | null = null;
 
     const spawnParticles = (x: number, y: number) => {
       for (let i = 0; i < 5; i++) {
@@ -50,45 +59,59 @@ const MouseSpark: React.FC<MouseSparkProps> = ({ theme = "light" }) => {
           life: 1,
         });
       }
+
+      if (particles.length > maxParticles) {
+        particles = particles.slice(particles.length - maxParticles);
+      }
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      spawnParticles(e.clientX, e.clientY);
+      pendingPoint = { x: e.clientX, y: e.clientY };
     };
 
     const animate = () => {
       if (!ctx) return;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (pendingPoint) {
+        spawnParticles(pendingPoint.x, pendingPoint.y);
+        pendingPoint = null;
+      }
 
-      particles.forEach((p, i) => {
-        p.x += p.dx;
-        p.y += p.dy;
-        p.dx *= 0.95;
-        p.dy *= 0.95;
-        p.life -= 0.02;
+      if (particles.length > 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (p.life > 0) {
-          ctx.globalAlpha = p.life;
-          ctx.fillStyle = p.color;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          particles.splice(i, 1);
-        }
-      });
+        particles = particles.filter((p) => {
+          p.x += p.dx;
+          p.y += p.dy;
+          p.dx *= 0.95;
+          p.dy *= 0.95;
+          p.life -= 0.02;
 
-      ctx.globalAlpha = 1;
-      requestAnimationFrame(animate);
+          if (p.life > 0) {
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            return true;
+          } else {
+            return false;
+          }
+        });
+
+        ctx.globalAlpha = 1;
+      }
+
+      rafId = requestAnimationFrame(animate);
     };
 
-    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mousemove", handleMouseMove, { passive: true });
     animate();
 
     return () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener('resize', updateCanvasSize);
+      cancelAnimationFrame(rafId);
     };
   }, [theme]);
 

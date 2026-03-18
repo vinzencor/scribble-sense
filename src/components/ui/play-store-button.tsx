@@ -21,7 +21,7 @@ export function PlayStoreButton({ className, ...props }: PlayStoreButtonProps) {
       )}
       {...props}
     >
-      <PlayIcon className="size-8 group-hover:animate-float" />
+      <PlayIcon className="size-8" />
       <div className="text-left flex flex-col items-start justify-center">
         <span className="text-xs leading-none tracking-tight opacity-90">
           GET IT ON

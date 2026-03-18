@@ -111,8 +111,8 @@ export default function LetterTracingGame() {
   const [currentLetter, setCurrentLetter] = useState(0); // start at A
   const [traced, setTraced] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [strokeLength, setStrokeLength] = useState(0);
-  const [points, setPoints] = useState<Point[]>([]);
+  const strokeLengthRef = useRef(0);
+  const pointsRef = useRef<Point[]>([]);
   const lastPointRef = useRef<Point | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -129,8 +129,8 @@ export default function LetterTracingGame() {
 
   useEffect(() => {
     setTraced(false);
-    setStrokeLength(0);
-    setPoints([]);
+    strokeLengthRef.current = 0;
+    pointsRef.current = [];
     clearCanvas();
   }, [currentLetter]);
 
@@ -141,8 +141,8 @@ export default function LetterTracingGame() {
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: (e.clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (canvas.height / rect.height),
     };
   };
 
@@ -168,7 +168,7 @@ export default function LetterTracingGame() {
     ctx.beginPath();
     ctx.moveTo(point.x, point.y);
 
-    setPoints((prev) => [...prev, point]);
+    pointsRef.current.push(point);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -189,10 +189,10 @@ export default function LetterTracingGame() {
     const dx = point.x - lastPoint.x;
     const dy = point.y - lastPoint.y;
     const dist = Math.hypot(dx, dy);
-    setStrokeLength((prev) => prev + dist);
+    strokeLengthRef.current += dist;
 
     lastPointRef.current = point;
-    setPoints((prev) => [...prev, point]);
+    pointsRef.current.push(point);
   };
 
   const endDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -208,10 +208,10 @@ export default function LetterTracingGame() {
     // Only evaluate for A, B, C
     if (!isPlayable) return;
 
-    if (strokeLength < MIN_STROKE_LENGTH) return; // too short / scribble
+    if (strokeLengthRef.current < MIN_STROKE_LENGTH) return; // too short / scribble
 
     const letter = letters[currentLetter];
-    const accuracy = getLetterAccuracy(letter, points);
+    const accuracy = getLetterAccuracy(letter, pointsRef.current);
 
     if (!traced && accuracy >= MIN_ACCURACY) {
       setTraced(true);
@@ -260,27 +260,27 @@ export default function LetterTracingGame() {
 
   const handleClear = () => {
     clearCanvas();
-    setStrokeLength(0);
-    setPoints([]);
+    strokeLengthRef.current = 0;
+    pointsRef.current = [];
     setTraced(false);
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-8 bg-card rounded-3xl shadow-purple border-2 border-accent/20">
-      <h3 className="text-3xl font-bold text-center mb-2 bg-gradient-purple bg-clip-text text-transparent">
+    <div className="w-full max-w-2xl mx-auto p-7 sm:p-9 bg-card rounded-3xl shadow-purple border-2 border-accent/20 flex flex-col gap-5">
+      <h3 className="text-4xl sm:text-5xl font-bold text-center mb-1 bg-gradient-purple bg-clip-text text-transparent leading-tight">
         Letter Tracing Game
       </h3>
-      <p className="text-center text-sm text-muted-foreground mb-6">
+      <p className="text-center text-base sm:text-lg text-muted-foreground mb-2 leading-relaxed">
         Carefully trace the <span className="font-semibold">dotted letter</span>.
         The drawing must follow the shape to move on.
       </p>
 
       {/* A–Z strip */}
-      <div className="flex justify-center gap-1 mb-8 flex-wrap">
+      <div className="flex justify-center gap-1.5 mb-3 flex-wrap">
         {letters.map((letter, idx) => (
           <div
             key={letter}
-            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
               idx === currentLetter
                 ? "bg-gradient-purple text-white"
                 : idx <= PLAYABLE_MAX_INDEX && idx < currentLetter
@@ -298,7 +298,7 @@ export default function LetterTracingGame() {
         key={currentLetter}
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative mb-8 mx-auto max-w-md aspect-[4/3]"
+        className="relative mx-auto w-full max-w-[34rem] aspect-[4/3]"
       >
         <canvas
           ref={canvasRef}
@@ -321,14 +321,14 @@ export default function LetterTracingGame() {
         )}
       </motion.div>
 
-      <div className="text-center space-y-3">
+      <div className="text-center space-y-4 pt-1">
         {traced ? (
-          <p className="text-sm text-emerald-500 font-medium">
+          <p className="text-base sm:text-lg text-emerald-500 font-semibold">
             Great job!{" "}
             {isLastPlayable ? "Redirecting you to the app..." : "Tap next to continue."}
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base sm:text-lg text-muted-foreground">
             Follow the dotted lines as closely as you can.
           </p>
         )}
@@ -346,13 +346,13 @@ export default function LetterTracingGame() {
             }
             variant="purple"
             onClick={handleNext}
-            className="text-lg px-8 py-3"
+            className="text-xl px-9 py-3.5"
           />
 
           <button
             type="button"
             onClick={handleClear}
-            className="px-6 py-3 rounded-full border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+            className="px-6 py-3.5 rounded-full border border-border text-base font-medium text-muted-foreground hover:bg-muted transition-colors"
           >
             Clear
           </button>

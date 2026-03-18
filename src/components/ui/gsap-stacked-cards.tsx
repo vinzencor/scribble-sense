@@ -1,17 +1,13 @@
-import React, { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
+import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { PlayStoreButton } from "./play-store-button";
 import AstraButton from "./astra-button";
 
-gsap.registerPlugin(ScrollTrigger);
-
 interface CardData {
   backgroundImage?: string;
   backgroundVideo?: string;
+  backgroundClassName?: string;
   badge?: string;
   title: React.ReactNode;
   description: string;
@@ -22,62 +18,20 @@ interface GSAPStackedCardsProps {
 }
 
 const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
-
-  useGSAP(() => {
-    if (!containerRef.current) return;
-
-    const cardElements = cardsRef.current.filter(Boolean) as HTMLDivElement[];
-
-    cardElements.forEach((card, index) => {
-      const isLast = index === cardElements.length - 1;
-
-      ScrollTrigger.create({
-        trigger: card,
-        start: "top top",
-        end: isLast ? "bottom bottom" : "bottom top",
-        pin: !isLast,
-        pinSpacing: false,
-        scrub: true,
-        id: `card-${index}`,
-      });
-
-      if (!isLast) {
-        gsap.to(card, {
-          scale: 0.9,
-          opacity: 0.5,
-          filter: "blur(4px)",
-          scrollTrigger: {
-            trigger: cardElements[index + 1],
-            start: "top bottom",
-            end: "top top",
-            scrub: true,
-          },
-        });
-      }
-    });
-
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    };
-  }, { scope: containerRef });
-
   return (
-    <div ref={containerRef} className="relative">
+    <div className="relative">
       {cards.map((card, index) => (
         <div
           key={index}
-          ref={(el) => { cardsRef.current[index] = el; }}
-          className="relative min-h-screen flex items-center justify-center overflow-hidden"
+          className={`relative min-h-screen flex items-center justify-center overflow-hidden ${card.backgroundClassName ?? ""}`}
           style={
             card.backgroundImage
               ? {
-                backgroundImage: `url('${card.backgroundImage}')`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-              }
+                  backgroundImage: `url('${card.backgroundImage}')`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                }
               : {}
           }
         >
@@ -93,15 +47,15 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
               <source src={card.backgroundVideo} type="video/mp4" />
             </video>
           )}
-
-          <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/50 to-black/40" />
+          
+          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/75 to-white/80" />
 
           <div className="container mx-auto px-4 py-20 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-center max-w-4xl mx-auto"
+              className="text-center max-w-4xl mx-auto rounded-3xl bg-white/65 backdrop-blur-sm border border-sky-100 p-6 md:p-10 shadow-sm"
             >
               {card.badge && (
                 <motion.div
@@ -120,7 +74,7 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
                 {card.title}
               </h1>
 
-              <p className="text-xl md:text-2xl text-[#F5F4EB] mb-12 max-w-2xl mx-auto">
+              <p className="text-xl md:text-2xl text-slate-700 mb-12 max-w-2xl mx-auto">
                 {card.description}
               </p>
 
@@ -132,7 +86,7 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
                   onClick={() =>
                     document.getElementById("games")?.scrollIntoView({ behavior: "smooth" })
                   }
-                  className="text-lg text-white"
+                  className="text-lg"
                 />
               </div>
             </motion.div>
@@ -141,7 +95,7 @@ const GSAPStackedCards: React.FC<GSAPStackedCardsProps> = ({ cards }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.3 }}
             className="absolute bottom-10 left-1/2 -translate-x-1/2"
           >
             <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }}>

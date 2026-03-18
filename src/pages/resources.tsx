@@ -1,13 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import AnimatedDownloadButton from "@/components/ui/download-hover-button"
 import Navigation from "@/components/Navigation"
 import MouseSpark from "@/components/ui/mouse-spark"
 import FlipBook from "@/components/ui/flip-book"
-import { BookOpen, Loader2 } from "lucide-react"
+import { BookOpen, X, Loader2 } from "lucide-react"
 import { getResources, getWorkbooks, Resource, Workbook } from "@/lib/supabase"
+import { sendEmail } from "@/lib/email"
+import { toast } from "sonner"
+import { Document, Page, pdfjs } from "react-pdf"
+import "react-pdf/dist/Page/AnnotationLayer.css"
+import "react-pdf/dist/Page/TextLayer.css"
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 
 type ResourceItem = {
   id: string | number
@@ -15,6 +22,55 @@ type ResourceItem = {
   fileUrl: string
 }
 
+function WorkbookCover({
+  pdfUrl,
+  title,
+  fallbackImage,
+}: {
+  pdfUrl: string
+  title: string
+  fallbackImage?: string
+}) {
+  const [pdfFailed, setPdfFailed] = useState(false)
+
+  if (pdfFailed && fallbackImage) {
+    return (
+      <img
+        src={fallbackImage}
+        alt={title}
+        className="w-full h-full object-cover"
+      />
+    )
+  }
+
+  if (pdfFailed) {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-[#382467] to-[#4f2f8d] flex items-center justify-center p-5">
+        <p className="text-white text-center font-semibold leading-tight">{title}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full h-full bg-white [&_.react-pdf__Page]:!w-full [&_.react-pdf__Page__canvas]:!w-full [&_.react-pdf__Page__canvas]:!h-full">
+      <Document
+        file={pdfUrl}
+        loading={
+          <div className="w-full h-full animate-pulse bg-slate-200" />
+        }
+        onLoadError={() => setPdfFailed(true)}
+        error={<div className="hidden" />}
+      >
+        <Page
+          pageNumber={1}
+          width={280}
+          renderAnnotationLayer={false}
+          renderTextLayer={false}
+        />
+      </Document>
+    </div>
+  )
+}
 type WorkbookItem = {
   id: string
   title: string
@@ -56,21 +112,21 @@ const FALLBACK_WORKBOOKS: WorkbookItem[] = [
     id: "curve-line-tracing",
     title: "Curve Line Tracing",
     pdfUrl: "/CurveLineTracing.pdf",
-    coverImage: "https://scribblesense.co.uk/assets/img/slider/slide-02.jpg",
+    coverImage: "",
     description: "Practice curve and line tracing exercises",
   },
   {
     id: "exercises-dashboard",
     title: "List of Exercises",
     pdfUrl: "/List of Exercise - Social media dash board.pdf",
-    coverImage: "https://scribblesense.co.uk/assets/img/slider/slide-01.jpg",
+    coverImage: "",
     description: "Comprehensive exercise collection",
   },
   {
     id: "st-workbook",
     title: "ST Workbook",
     pdfUrl: "/ST.pdf",
-    coverImage: "https://scribblesense.co.uk/assets/img/slider/slide-03.jpg",
+    coverImage: "",
     description: "Special therapy workbook activities",
   },
 ]
@@ -101,9 +157,29 @@ const rowVariants = {
 
 export default function ResourcesPage() {
   const [activeWorkbook, setActiveWorkbook] = useState<WorkbookItem | null>(null)
+  const [pendingWorkbook, setPendingWorkbook] = useState<WorkbookItem | null>(null)
+  const [showContactModal, setShowContactModal] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formData, setFormData] = useState({ name: "", email: "", message: "" })
   const [resources, setResources] = useState<ResourceItem[]>(FALLBACK_RESOURCES)
   const [workbooks, setWorkbooks] = useState<WorkbookItem[]>(FALLBACK_WORKBOOKS)
-  const [loading, setLoading] = useState(true)
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    try {
+      await sendEmail(formData.name, formData.email, formData.message)
+      toast.success("Details submitted successfully!")
+      setShowContactModal(false)
+      setActiveWorkbook(pendingWorkbook)
+      setFormData({ name: "", email: "", message: "" })
+    } catch (error) {
+      toast.error("Failed to submit details. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -125,12 +201,11 @@ export default function ResourcesPage() {
           id: w.id,
           title: w.title,
           pdfUrl: w.pdf_url,
-          coverImage: w.cover_image_url,
+          coverImage: w.cover_image_url || "",
           description: w.description,
         })))
       }
 
-      setLoading(false)
     }
     fetchData()
   }, [])
@@ -141,17 +216,8 @@ export default function ResourcesPage() {
       <Navigation />
       {/* Hero / banner */}
       <section
-        className="relative h-[260px] md:h-[320px] flex items-center justify-center overflow-hidden"
-        style={{
-          backgroundImage:
-            "url('https://scribblesense.co.uk/assets/img/slider/slide-02.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
+        className="relative h-[260px] md:h-[320px] flex items-center justify-center overflow-hidden bg-gradient-to-r from-pink-100 via-purple-100 to-cyan-100"
       >
-        {/* Dark overlay so text pops */}
-        <div className="absolute inset-0 bg-black/55" />
 
         <motion.div
           className="relative z-10 text-center px-4"
@@ -159,13 +225,13 @@ export default function ResourcesPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <p className="text-xs md:text-sm text-slate-100/80 mb-2">
+          <p className="text-sm md:text-base text-slate-800/80 mb-2 font-medium">
             Home – Resources
           </p>
-          <h1 className="text-3xl md:text-5xl font-semibold text-white mb-2">
+          <h1 className="text-4xl md:text-7xl font-['Fredoka',sans-serif] font-bold text-[#382467] mb-4">
             Our Resources
           </h1>
-          <p className="text-slate-100/90 max-w-2xl mx-auto text-xs md:text-sm">
+          <p className="text-slate-700 max-w-2xl mx-auto text-base md:text-xl font-medium">
             Download helpful guides, worksheets, and materials designed to
             support children with dysgraphia and their families.
           </p>
@@ -176,7 +242,7 @@ export default function ResourcesPage() {
       </section>
 
       {/* Learning Materials list */}
-      <section className="py-16 md:py-24">
+      {/* <section className="py-16 md:py-24">
         <div className="container mx-auto max-w-5xl px-4">
           <motion.div
             className="text-center mb-10 md:mb-12"
@@ -229,7 +295,7 @@ export default function ResourcesPage() {
             ))}
           </motion.div>
         </div>
-      </section>
+      </section> */}
 
       {/* Interactive Workbook Section */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-white to-slate-50">
@@ -262,18 +328,20 @@ export default function ResourcesPage() {
                 className="relative cursor-pointer group"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => setActiveWorkbook(workbook)}
+                onClick={() => {
+                  setPendingWorkbook(workbook)
+                  setShowContactModal(true)
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
                 <div className="relative w-[260px] h-[360px] md:w-[280px] md:h-[380px] rounded-lg overflow-hidden shadow-2xl">
-                  {/* Book cover image */}
-                  <img
-                    src={workbook.coverImage}
-                    alt={workbook.title}
-                    className="w-full h-full object-cover"
+                  <WorkbookCover
+                    pdfUrl={workbook.pdfUrl}
+                    title={workbook.title}
+                    fallbackImage={workbook.coverImage}
                   />
                   {/* Overlay with title */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#382467]/90 via-[#382467]/40 to-transparent flex flex-col items-center justify-end p-6">
@@ -298,6 +366,99 @@ export default function ResourcesPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Contact Modal */}
+      <AnimatePresence>
+        {showContactModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 md:p-8"
+            >
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+                disabled={isSubmitting}
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="mb-6 text-center">
+                <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="w-6 h-6 text-pink-500" />
+                </div>
+                <h3 className="text-xl font-bold text-[#382467]">
+                  Want to peek inside?
+                </h3>
+                <p className="text-sm text-slate-500 mt-2">
+                  Please share your details to preview this workbook.
+                </p>
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="space-y-4 text-left">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                    placeholder="Your name"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                    placeholder="your@email.com"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Message
+                  </label>
+                  <textarea
+                    required
+                    value={formData.message}
+                    onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                    rows={3}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all resize-none"
+                    placeholder="Why are you interested in this workbook?"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="mt-2 w-full py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-xl flex items-center justify-center transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Opening...
+                    </>
+                  ) : (
+                    "Open Workbook"
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* FlipBook Modal */}
       <FlipBook

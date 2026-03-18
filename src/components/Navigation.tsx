@@ -17,6 +17,7 @@ import { Textarea } from "./ui/textarea";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   const links = [
@@ -40,13 +41,23 @@ export default function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const showDesktopNav = !isScrolled || isExpanded;
+
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <nav className="fixed inset-x-0 top-0 z-50 flex justify-center pointer-events-none">
         {/* Floating container */}
         <div
-          className={`pointer-events-auto mt-4 mx-auto flex items-center rounded-full border border-border bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300
-          ${isScrolled ? "px-4 py-2 max-w-xs justify-center" : "px-6 py-3 max-w-5xl justify-between"}`}
+          onMouseEnter={() => {
+            if (isScrolled) setIsExpanded(true);
+          }}
+          onMouseLeave={() => setIsExpanded(false)}
+          onFocusCapture={() => {
+            if (isScrolled) setIsExpanded(true);
+          }}
+          onBlurCapture={() => setIsExpanded(false)}
+          className={`pointer-events-auto mt-4 mx-auto flex items-center rounded-full border border-border bg-background/80 backdrop-blur-md shadow-lg transition-all duration-500 ease-out
+          ${showDesktopNav ? "px-6 py-3 max-w-5xl justify-between" : "px-4 py-2 max-w-xs justify-center"}`}
         >
           {/* Logo FIRST */}
           <NavLink to="/" className="flex items-center justify-center">
@@ -54,14 +65,20 @@ export default function Navigation() {
               src="/Scruibblelogo-removebg-preview.png"
               alt="ScribbleSense Logo"
               className={`transition-all duration-300 ${
-                isScrolled ? "h-8 w-auto" : "h-10 w-auto"
+                showDesktopNav ? "h-10 w-auto" : "h-8 w-auto"
               }`}
             />
           </NavLink>
 
           {/* Desktop links + Join button – small gap after logo, hidden when scrolled */}
-          {!isScrolled && (
-            <div className="hidden md:flex items-center gap-6 ml-4">
+          <div
+            className={`hidden md:flex items-center ml-4 overflow-hidden transition-all duration-500 ease-out ${
+              showDesktopNav
+                ? "max-w-[720px] opacity-100 translate-x-0 gap-6"
+                : "max-w-0 opacity-0 -translate-x-2 gap-0 pointer-events-none"
+            }`}
+            aria-hidden={!showDesktopNav}
+          >
               {links.map((link) => (
                 <NavLink
                   key={link.to}
@@ -80,47 +97,45 @@ export default function Navigation() {
                 </Button>
               </DialogTrigger>
             </div>
-          )}
 
-          {/* Mobile Navigation – hidden when scrolled so only logo is visible */}
-          {!isScrolled && (
-            <div className="flex md:hidden items-center gap-2 ml-3">
-              {/* Join CTA (mobile) */}
+          {/* Mobile Navigation */}
+          <div className="flex md:hidden items-center gap-2 ml-3">
+            {!isScrolled && (
               <DialogTrigger asChild>
                 <Button size="sm" className="rounded-full text-xs font-semibold">
                   Join
                 </Button>
               </DialogTrigger>
+            )}
 
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <div className="flex flex-col gap-4 mt-8">
-                    {links.map((link) => (
-                      <NavLink
-                        key={link.to}
-                        to={link.to}
-                        className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-                        activeClassName="text-primary font-bold"
-                      >
-                        {link.label}
-                      </NavLink>
-                    ))}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <div className="flex flex-col gap-4 mt-8">
+                  {links.map((link) => (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                      activeClassName="text-primary font-bold"
+                    >
+                      {link.label}
+                    </NavLink>
+                  ))}
 
-                    <DialogTrigger asChild>
-                      <Button className="mt-4 rounded-full font-semibold">
-                        Join ScribbleSense
-                      </Button>
-                    </DialogTrigger>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          )}
+                  <DialogTrigger asChild>
+                    <Button className="mt-4 rounded-full font-semibold">
+                      Join ScribbleSense
+                    </Button>
+                  </DialogTrigger>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </nav>
 

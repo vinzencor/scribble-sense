@@ -128,17 +128,8 @@ export default function ServicesPage() {
       <Navigation />
       {/* Hero / banner section */}
       <section
-        className="relative h-[260px] md:h-[320px] flex items-center justify-center overflow-hidden"
-        style={{
-          backgroundImage:
-            "url('https://scribblesense.co.uk/assets/img/slider/slide-02.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
+        className="relative h-[260px] md:h-[320px] flex items-center justify-center overflow-hidden bg-gradient-to-r from-pink-100 via-purple-100 to-cyan-100"
       >
-        {/* Dark overlay so text is readable */}
-        <div className="absolute inset-0 bg-black/55" />
 
         {/* Floating decorative shapes */}
         <motion.span
@@ -160,13 +151,13 @@ export default function ServicesPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          {/* <p className="text-xs md:text-sm text-slate-100/80 mb-2">
+          {/* <p className="text-xs md:text-sm text-slate-800/80 mb-2">
             Home – Services
           </p> */}
-          <h1 className="text-3xl md:text-5xl font-semibold text-white mb-2">
+          <h1 className="text-4xl md:text-7xl font-['Fredoka',sans-serif] font-bold text-[#382467] mb-4">
             Our Services
           </h1>
-          <p className="text-slate-100/90 max-w-2xl mx-auto text-xs md:text-sm">
+          <p className="text-slate-700 max-w-2xl mx-auto text-base md:text-xl font-medium">
             Supporting children and families with dysgraphia through
             personalised, playful, and research-informed programs.
           </p>

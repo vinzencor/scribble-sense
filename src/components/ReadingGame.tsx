@@ -19,7 +19,6 @@ const allWords = [
 export default function ReadingGame() {
   const [roundWords, setRoundWords] = useState<{ word: string; image: string }[]>([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [isGameActive, setIsGameActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [supportError, setSupportError] = useState<string | null>(null);
   const [lastHeard, setLastHeard] = useState<string>("");
@@ -179,13 +178,6 @@ export default function ReadingGame() {
     }
   };
 
-  const handleStartGame = () => {
-    if (!roundWords.length) return;
-    setIsGameActive(true);
-    toast.success("Reading game started! Say the word you see.");
-    startListening();
-  };
-
   const handleTryAgain = () => {
     if (!currentWord) return;
     toast.message("Okay, let's try that word again.");
@@ -193,22 +185,16 @@ export default function ReadingGame() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-8 bg-card rounded-3xl shadow-cyan border-2 border-secondary/20">
+    <div className="w-full max-w-2xl mx-auto p-6 sm:p-8 bg-card rounded-3xl shadow-cyan border-2 border-secondary/20 h-full min-h-[620px] sm:min-h-[700px] lg:min-h-[760px] flex flex-col">
       <h3 className="text-3xl font-bold text-center mb-4 bg-gradient-cyan bg-clip-text text-transparent">
         Reading Game
       </h3>
 
-      {!isGameActive || !currentWord ? (
+      {!currentWord ? (
         <div className="text-center py-12">
           <p className="text-lg mb-6 text-muted-foreground">
-            Click start to begin the voice reading game. Say the word you see on the screen!
+            Loading your word set...
           </p>
-          <AstraButton
-            label="Start Game"
-            variant="cyan"
-            onClick={handleStartGame}
-            className="text-lg px-12 py-4"
-          />
           {supportError && (
             <p className="mt-4 text-sm text-red-500">
               {supportError}
@@ -250,7 +236,7 @@ export default function ReadingGame() {
 
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
               <AstraButton
-                label={isListening ? "Listening..." : "Try Again"}
+                label={isListening ? "Listening..." : "Start Listening"}
                 variant="cyan"
                 onClick={handleTryAgain}
                 className="text-sm px-6 py-3"

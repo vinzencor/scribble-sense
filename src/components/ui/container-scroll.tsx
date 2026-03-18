@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useScroll, useTransform, motion } from "framer-motion";
+import { useScroll, useTransform, motion, useReducedMotion } from "framer-motion";
 
 interface HeaderProps {
   translate: any;
@@ -33,7 +33,7 @@ export function Card({ rotateX, scale, children }: CardProps) {
         scale,
         boxShadow: "0 20px 60px -10px rgba(0,0,0,0.3)",
       }}
-      className="max-w-5xl -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full border-4 border-primary/20 p-2 md:p-6 bg-card rounded-3xl"
+      className="max-w-5xl -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full border-4 border-primary/20 p-2 md:p-6 bg-card rounded-3xl transform-gpu will-change-transform"
     >
       <div className="h-full w-full overflow-hidden rounded-2xl bg-muted">
         {children}
@@ -49,8 +49,12 @@ interface ContainerScrollProps {
 
 export default function ContainerScroll({ titleComponent, children }: ContainerScrollProps) {
   const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: containerRef });
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"],
+  });
   const [isMobile, setIsMobile] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     function handleResize() {
@@ -61,10 +65,11 @@ export default function ContainerScroll({ titleComponent, children }: ContainerS
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const scaleRange = isMobile ? [0.7, 0.9] : [1.05, 1];
-  const rotateX = useTransform(scrollYProgress, [0, 1], [20, 0]);
+  const shouldUseLightMotion = isMobile || Boolean(prefersReducedMotion);
+  const scaleRange = shouldUseLightMotion ? [0.98, 1] : [1.03, 1];
+  const rotateX = useTransform(scrollYProgress, [0, 1], shouldUseLightMotion ? [0, 0] : [10, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], scaleRange);
-  const translate = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const translate = useTransform(scrollYProgress, [0, 1], shouldUseLightMotion ? [0, -24] : [0, -60]);
 
   return (
     <div

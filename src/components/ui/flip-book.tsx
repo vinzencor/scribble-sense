@@ -1,46 +1,17 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, ChevronLeft, ChevronRight, Download, Smartphone } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, Download, BookOpen } from "lucide-react"
+import { Document, Page, pdfjs } from "react-pdf"
+// @ts-ignore
+import HTMLFlipBook from "react-pageflip"
 import { cn } from "@/lib/utils"
 
-// Storage key for tracking returning users
-const RETURNING_USER_KEY = "scribblesense_returning_user"
-const PREVIEW_DURATION = 15 // seconds before showing app redirect
+import "react-pdf/dist/Page/AnnotationLayer.css"
+import "react-pdf/dist/Page/TextLayer.css"
 
-// App store links
-const APP_LINKS = {
-  ios: "https://apps.apple.com/gb/app/scribblesense/id6744368645",
-  android: "https://play.google.com/store/apps/details?id=com.scribblesense.app",
-}
-
-// Detect if user is on iOS or Android
-const getDeviceType = (): "ios" | "android" | "desktop" => {
-  if (typeof window === "undefined") return "desktop"
-
-  const userAgent = navigator.userAgent || navigator.vendor || (window as Window & { opera?: string }).opera || ""
-
-  if (/iPad|iPhone|iPod/.test(userAgent)) {
-    return "ios"
-  }
-  if (/android/i.test(userAgent)) {
-    return "android"
-  }
-  return "desktop"
-}
-
-// Check if user is a returning user (has full access)
-const isReturningUser = (): boolean => {
-  if (typeof window === "undefined") return false
-  return localStorage.getItem(RETURNING_USER_KEY) === "true"
-}
-
-// Mark user as returning (grant full access)
-const markAsReturningUser = (): void => {
-  if (typeof window === "undefined") return
-  localStorage.setItem(RETURNING_USER_KEY, "true")
-}
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 
 interface FlipBookProps {
   isOpen: boolean
@@ -51,100 +22,67 @@ interface FlipBookProps {
   pageImages?: string[]
 }
 
+const PageWrapper = React.forwardRef<HTMLDivElement, { pageNum: number; pageWidth: number; pageHeight: number }>(
+  ({ pageNum, pageWidth, pageHeight }, ref) => {
+    return (
+      <div
+        className="page bg-white shadow-md border-r border-[#ecece8] overflow-hidden"
+        ref={ref}
+        style={{ width: pageWidth, height: pageHeight }}
+      >
+        <Page
+          pageNumber={pageNum}
+          width={pageWidth}
+          renderAnnotationLayer={false}
+          renderTextLayer={false}
+          loading={<div className="h-full w-full animate-pulse bg-slate-100 flex items-center justify-center text-sm text-slate-400">Loading page...</div>}
+        />
+        {/* Page numbering */}
+        <div className="absolute bottom-3 left-0 right-0 text-center text-[10px] text-slate-400 font-medium">
+          {pageNum}
+        </div>
+      </div>
+    )
+  }
+)
+PageWrapper.displayName = "PageWrapper"
+
 const FlipBook: React.FC<FlipBookProps> = ({
   isOpen,
   onClose,
   pdfUrl,
   title,
-  coverImage = "https://scribblesense.co.uk/assets/img/slider/slide-02.jpg",
+  coverImage,
 }) => {
-  const [currentPage, setCurrentPage] = useState(0)
-  const [isFlipping, setIsFlipping] = useState(false)
-  const [flipDirection, setFlipDirection] = useState<"next" | "prev">("next")
-  const [showPdf, setShowPdf] = useState(false)
-  const [hasFullAccess, setHasFullAccess] = useState(false)
-  const [previewTimeLeft, setPreviewTimeLeft] = useState(PREVIEW_DURATION)
-  const [showAppRedirect, setShowAppRedirect] = useState(false)
-  const [deviceType, setDeviceType] = useState<"ios" | "android" | "desktop">("desktop")
+  const [isBookOpen, setIsBookOpen] = useState(false)
+  const [numPages, setNumPages] = useState<number>(0)
+  const [pageWidth, setPageWidth] = useState(400)
+  const [pageHeight, setPageHeight] = useState(565) // ~1.414 ratio
+  const [pdfFailed, setPdfFailed] = useState(false)
+  const bookRef = useRef<any>(null)
 
-  // Check for returning user and device type on mount
   useEffect(() => {
-    setHasFullAccess(isReturningUser())
-    setDeviceType(getDeviceType())
+    const updateDimensions = () => {
+      // For mobile: single page full screen-ish
+      // For desktop: still single page (portrait) as requested by user
+      const maxW = Math.min(600, window.innerWidth - 60)
+      const nextW = Math.max(280, maxW)
+      setPageWidth(nextW)
+      setPageHeight(nextW * 1.414)
+    }
+
+    updateDimensions()
+    window.addEventListener("resize", updateDimensions)
+    return () => window.removeEventListener("resize", updateDimensions)
   }, [])
 
-  // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setCurrentPage(0)
-      setShowPdf(false)
-      setPreviewTimeLeft(PREVIEW_DURATION)
-      setShowAppRedirect(false)
+      setIsBookOpen(false)
+      setNumPages(0)
+      setPdfFailed(false)
     }
-  }, [isOpen])
-
-  // Preview timer - counts down when PDF is shown and user doesn't have full access
-  useEffect(() => {
-    if (!isOpen || !showPdf || hasFullAccess) return
-
-    const timer = setInterval(() => {
-      setPreviewTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          setShowAppRedirect(true)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [isOpen, showPdf, hasFullAccess])
-
-  // Handle app redirect
-  const handleAppRedirect = useCallback(() => {
-    const link = deviceType === "ios" ? APP_LINKS.ios : APP_LINKS.android
-    window.open(link, "_blank")
-    // Mark user as returning so they get full access next time
-    markAsReturningUser()
-    setHasFullAccess(true)
-    setShowAppRedirect(false)
-    setPreviewTimeLeft(PREVIEW_DURATION)
-  }, [deviceType])
-
-  // Grant full access directly (for testing or "I already have the app" button)
-  const grantFullAccess = useCallback(() => {
-    markAsReturningUser()
-    setHasFullAccess(true)
-    setShowAppRedirect(false)
-  }, [])
-
-  const handleNextPage = () => {
-    if (isFlipping) return
-
-    if (currentPage === 0) {
-      // Flip from cover to PDF view
-      setFlipDirection("next")
-      setIsFlipping(true)
-      setTimeout(() => {
-        setCurrentPage(1)
-        setShowPdf(true)
-        setIsFlipping(false)
-      }, 600)
-    }
-  }
-
-  const handlePrevPage = () => {
-    if (isFlipping || currentPage === 0) return
-
-    setFlipDirection("prev")
-    setIsFlipping(true)
-    setTimeout(() => {
-      setCurrentPage(0)
-      setShowPdf(false)
-      setIsFlipping(false)
-    }, 600)
-  }
+  }, [isOpen, pdfUrl])
 
   const handleDownload = () => {
     const link = document.createElement("a")
@@ -155,6 +93,18 @@ const FlipBook: React.FC<FlipBookProps> = ({
     document.body.removeChild(link)
   }
 
+  const nextButtonClick = () => {
+    if (bookRef.current && bookRef.current.pageFlip()) {
+      bookRef.current.pageFlip().flipNext()
+    }
+  }
+
+  const prevButtonClick = () => {
+    if (bookRef.current && bookRef.current.pageFlip()) {
+      bookRef.current.pageFlip().flipPrev()
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -163,236 +113,180 @@ const FlipBook: React.FC<FlipBookProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.8, opacity: 0, rotateY: -10 }}
-          animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-          exit={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.9, opacity: 0, y: 30 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 30 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative max-w-[95vw] max-h-[90vh]"
+          className="relative max-w-[100vw] max-h-[100vh] flex flex-col items-center justify-center"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Controls */}
-          <div className="absolute -top-14 left-0 right-0 flex items-center justify-between">
-            <h2 className="text-white text-lg font-semibold truncate pr-4">{title}</h2>
+          {/* Top Controls */}
+          <div className="absolute -top-16 left-0 right-0 flex items-center justify-between w-full min-w-[300px]">
+            <h2 className="text-white text-lg font-semibold truncate pr-4 drop-shadow-md">{title}</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleDownload}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-2 text-white text-sm px-4"
+                className="p-2 md:px-4 md:py-2 rounded-full bg-white/10 hover:bg-white/25 border border-white/20 transition-colors flex items-center gap-2 text-white text-sm"
               >
                 <Download className="w-4 h-4" />
-                Download PDF
+                <span className="hidden md:inline">Download</span>
               </button>
               <button
                 onClick={onClose}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                className="p-2 md:p-2 rounded-full bg-white/10 hover:bg-white/25 border border-white/20 transition-colors"
+                aria-label="Close"
               >
-                <X className="w-6 h-6 text-white" />
+                <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </button>
             </div>
           </div>
 
-          {/* Book container */}
-          <div
-            className="book-cover relative shadow-2xl"
-            style={{ perspective: "2000px" }}
-          >
-            <div
-              className="book flex"
-              style={{
-                width: showPdf ? "900px" : "640px",
-                height: "580px",
-                transformStyle: "preserve-3d",
-                transition: "width 0.6s ease"
-              }}
-            >
-              {/* Left page */}
-              <div
-                className={cn(
-                  "w-1/2 h-full bg-[#F5F5F5] overflow-hidden relative",
-                  !showPdf && "rounded-l-md",
-                  showPdf && "rounded-l-md"
-                )}
-                style={{
-                  boxShadow: "inset -10px 0 30px rgba(0,0,0,0.1), inset 0 0 40px rgba(0,0,0,0.05)",
-                  background: "linear-gradient(90deg, #e8e8e8 0%, #f5f5f5 20%)"
-                }}
+          {!isBookOpen ? (
+            <div className="relative transform-gpu" style={{ perspective: "1500px" }}>
+              <motion.button
+                type="button"
+                onClick={() => setIsBookOpen(true)}
+                className="relative overflow-hidden rounded-md shadow-2xl bg-white flex flex-col items-center justify-center book-cover"
+                style={{ width: pageWidth, height: pageHeight, transformStyle: "preserve-3d" }}
+                whileHover={{ scale: 1.02, rotateY: -5 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.4 }}
               >
-                {!showPdf ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center p-8">
-                    <div className="text-center">
-                      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#382467]/10 flex items-center justify-center">
-                        <ChevronRight className="w-10 h-10 text-[#382467]" />
-                      </div>
-                      <p className="text-slate-500 text-lg mb-2">Click the cover to open</p>
-                      <p className="text-slate-400 text-sm">or use the arrow buttons</p>
-                    </div>
-                  </div>
-                ) : (
-                  <iframe
-                    src={`${pdfUrl}#page=1&toolbar=0&navpanes=0`}
-                    className="w-full h-full border-0"
-                    title={`${title} - Left Page`}
-                  />
-                )}
-                {/* Page edge effect */}
-                <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-gradient-to-r from-transparent to-slate-300" />
-              </div>
+                {/* Book Spine rendering */}
+                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/25 via-black/10 to-transparent z-10 pointer-events-none" />
 
-              {/* Right page (flipping page) */}
-              <div
-                className={cn(
-                  "w-1/2 h-full bg-[#F5F5F5] overflow-hidden cursor-pointer relative rounded-r-md",
-                  isFlipping && flipDirection === "next" && "animate-page-flip",
-                  isFlipping && flipDirection === "prev" && "animate-page-flip-reverse"
-                )}
-                style={{
-                  boxShadow: "inset 10px 0 30px rgba(0,0,0,0.1), 5px 0 20px rgba(0,0,0,0.2)",
-                  transformOrigin: "left center",
-                  transformStyle: "preserve-3d",
-                  background: "linear-gradient(-90deg, #e8e8e8 0%, #f5f5f5 20%)"
-                }}
-                onClick={!showPdf ? handleNextPage : undefined}
-              >
-                {!showPdf ? (
-                  <div className="w-full h-full relative group">
-                    <img
-                      src={coverImage}
-                      alt="Book cover"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#382467]/80 via-[#382467]/30 to-transparent flex flex-col items-center justify-end p-8">
-                      <h1 className="text-3xl font-bold text-white mb-3 text-center drop-shadow-lg">{title}</h1>
-                      <p className="text-white/90 text-sm mb-6">Click to open</p>
-                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-all group-hover:scale-110">
-                        <ChevronRight className="w-6 h-6 text-white" />
-                      </div>
+                {pdfFailed ? (
+                  coverImage ? (
+                    <img src={coverImage} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#382467] to-[#4f2f8d] flex items-center justify-center p-6">
+                      <p className="text-white text-center font-bold text-2xl drop-shadow-lg">{title}</p>
                     </div>
-                    {/* Book spine effect */}
-                    <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />
-                  </div>
+                  )
                 ) : (
-                  <iframe
-                    src={`${pdfUrl}#page=2&toolbar=0&navpanes=0`}
-                    className="w-full h-full border-0"
-                    title={`${title} - Right Page`}
-                  />
+                  <div className="absolute inset-0 bg-white">
+                    <Document
+                      file={pdfUrl}
+                      loading={<div className="h-full w-full animate-pulse bg-slate-200" />}
+                      onLoadError={() => setPdfFailed(true)}
+                      error={<div className="hidden" />}
+                    >
+                      <Page pageNumber={1} width={pageWidth} renderAnnotationLayer={false} renderTextLayer={false} />
+                    </Document>
+                  </div>
                 )}
-              </div>
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col items-center justify-end p-8 z-20">
+                  <motion.div
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="p-3 bg-white/20 backdrop-blur-md rounded-full mb-4 shadow-lg"
+                  >
+                    <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                  </motion.div>
+                  <h3 className="text-white text-xl md:text-2xl font-bold text-center mb-3 drop-shadow-md">{title}</h3>
+                  <span className="text-white text-sm font-medium px-5 py-2.5 bg-[#382467] hover:bg-[#4f2f8d] transition-colors rounded-full shadow-lg">
+                    Tap to Read
+                  </span>
+                </div>
+              </motion.button>
+              {/* Cover Shadow */}
+              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[90%] h-8 bg-black/60 blur-xl rounded-full -z-10" />
             </div>
-
-            {/* Navigation arrows */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handlePrevPage()
-              }}
-              disabled={currentPage === 0 || isFlipping}
-              className={cn(
-                "absolute left-[-60px] top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/30 transition-all",
-                (currentPage === 0 || isFlipping) && "opacity-30 cursor-not-allowed hover:bg-white/20"
-              )}
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative flex items-center justify-center pdf-flip-container shadow-2xl rounded-sm"
             >
-              <ChevronLeft className="w-6 h-6 text-white" />
-            </button>
+              <div className="relative">
+                {/* Outer Book Binding */}
+                <div className="absolute -left-3 top-0 bottom-0 w-3 bg-[#e4e1db] border border-[#d6c9b7] rounded-l-md shadow-inner z-0 pointer-events-none" />
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleNextPage()
-              }}
-              disabled={showPdf || isFlipping}
-              className={cn(
-                "absolute right-[-60px] top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/30 transition-all",
-                (showPdf || isFlipping) && "opacity-30 cursor-not-allowed hover:bg-white/20"
-              )}
-            >
-              <ChevronRight className="w-6 h-6 text-white" />
-            </button>
-
-            {/* Book shadow */}
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[95%] h-6 bg-black/30 blur-xl rounded-full" />
-
-            {/* Preview timer overlay - shows when PDF is visible and user doesn't have full access */}
-            {showPdf && !hasFullAccess && !showAppRedirect && (
-              <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg px-4 py-2 text-white text-sm flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full border-2 border-white/30 flex items-center justify-center">
-                  <span className="font-bold">{previewTimeLeft}</span>
-                </div>
-                <span>Preview ends in {previewTimeLeft}s</span>
-              </div>
-            )}
-
-            {/* App redirect overlay */}
-            {showAppRedirect && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute inset-0 bg-black/90 backdrop-blur-md rounded-lg flex flex-col items-center justify-center p-8 z-10"
-              >
-                <div className="text-center max-w-md">
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#382467] flex items-center justify-center">
-                    <Smartphone className="w-10 h-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">
-                    Get Full Access
-                  </h3>
-                  <p className="text-white/80 mb-6">
-                    Download the ScribbleSense app to unlock all workbooks and exercises. It's free!
-                  </p>
-
-                  <div className="space-y-3">
-                    <button
-                      onClick={handleAppRedirect}
-                      className="w-full px-6 py-4 bg-[#382467] hover:bg-[#4a3080] text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-3"
+                <Document
+                  file={pdfUrl}
+                  onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                  onLoadError={() => setPdfFailed(true)}
+                  loading={
+                    <div
+                      className="bg-[#faf9f6] flex flex-col items-center justify-center shadow-xl border border-[#ecece8]"
+                      style={{ width: pageWidth, height: pageHeight }}
                     >
-                      <Smartphone className="w-5 h-5" />
-                      {deviceType === "ios" ? "Download on App Store" :
-                       deviceType === "android" ? "Get it on Google Play" :
-                       "Download the App"}
-                    </button>
-
-                    <button
-                      onClick={grantFullAccess}
-                      className="w-full px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm transition-colors"
-                    >
-                      I already have the app
-                    </button>
-                  </div>
-
-                  {deviceType === "desktop" && (
-                    <div className="mt-6 flex gap-4 justify-center">
-                      <a
-                        href={APP_LINKS.ios}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/60 hover:text-white text-sm underline"
-                      >
-                        iOS App Store
-                      </a>
-                      <a
-                        href={APP_LINKS.android}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/60 hover:text-white text-sm underline"
-                      >
-                        Google Play
-                      </a>
+                      <div className="w-12 h-12 border-4 border-[#382467]/20 border-t-[#382467] rounded-full animate-spin mb-4" />
+                      <span className="text-[#382467] font-medium tracking-wide">Preparing pages...</span>
                     </div>
+                  }
+                  error={
+                    <div
+                      className="bg-[#faf9f6] flex flex-col items-center justify-center shadow-xl border border-[#ecece8] p-8 text-center"
+                      style={{ width: pageWidth, height: pageHeight }}
+                    >
+                      <p className="text-red-500 font-medium mb-2">Failed to load PDF.</p>
+                      <p className="text-slate-500 text-sm">You can still download the file using the button above.</p>
+                    </div>
+                  }
+                >
+                  {numPages > 0 && !pdfFailed && (
+                    <HTMLFlipBook
+                      width={pageWidth}
+                      height={pageHeight}
+                      size="fixed"
+                      minWidth={280}
+                      maxWidth={pageWidth}
+                      minHeight={400}
+                      maxHeight={pageHeight}
+                      drawShadow={true}
+                      flippingTime={600}
+                      usePortrait={true} // Forces single page view (one side)
+                      startPage={0}
+                      className="flip-book bg-white shadow-xl"
+                      style={{ margin: "0 auto", borderRadius: "0 4px 4px 0" }}
+                      ref={bookRef}
+                      showCover={false}
+                      mobileScrollSupport={true}
+                    >
+                      {Array.from(new Array(numPages), (el, index) => (
+                        <PageWrapper
+                          key={`page_${index + 1}`}
+                          pageNum={index + 1}
+                          pageWidth={pageWidth}
+                          pageHeight={pageHeight}
+                        />
+                      ))}
+                    </HTMLFlipBook>
                   )}
-                </div>
-              </motion.div>
-            )}
-          </div>
+                </Document>
+              </div>
 
-          {/* Instructions */}
-          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-white/60 text-sm text-center">
-            {!showPdf ? "Click the cover or right arrow to open the book" :
-             hasFullAccess ? "You have full access to this workbook" :
-             `Preview time remaining: ${previewTimeLeft}s`}
-          </div>
+              {numPages > 0 && !pdfFailed && (
+                <>
+                  <button
+                    onClick={prevButtonClick}
+                    className="absolute -left-12 md:-left-16 top-1/2 -translate-y-1/2 p-2.5 md:p-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full backdrop-blur-md transition-all z-20"
+                    aria-label="Previous Page"
+                  >
+                    <ChevronLeft className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  </button>
+                  <button
+                    onClick={nextButtonClick}
+                    className="absolute -right-12 md:-right-16 top-1/2 -translate-y-1/2 p-2.5 md:p-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full backdrop-blur-md transition-all z-20"
+                    aria-label="Next Page"
+                  >
+                    <ChevronRight className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  </button>
+
+                  {/* Page hints */}
+                  <div className="absolute -bottom-12 left-0 right-0 text-center text-white/70 text-sm font-medium">
+                    Swipe or use arrows to flip pages
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -400,4 +294,3 @@ const FlipBook: React.FC<FlipBookProps> = ({
 }
 
 export default FlipBook
-

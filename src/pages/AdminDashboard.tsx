@@ -8,10 +8,6 @@ import {
   createService,
   updateService,
   deleteService,
-  getResources,
-  createResource,
-  updateResource,
-  deleteResource,
   getWorkbooks,
   createWorkbook,
   updateWorkbook,
@@ -22,7 +18,6 @@ import {
   deleteGalleryImage,
   uploadFile,
   Service,
-  Resource,
   Workbook,
   GalleryImage,
 } from "@/lib/supabase";
@@ -57,7 +52,6 @@ const AdminDashboard = () => {
 
   // Data states
   const [services, setServices] = useState<Service[]>([]);
-  const [resources, setResources] = useState<Resource[]>([]);
   const [workbooks, setWorkbooks] = useState<Workbook[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
 
@@ -104,10 +98,6 @@ const AdminDashboard = () => {
         const { data: servicesData } = await getServices();
         setServices(servicesData || []);
         break;
-      case "resources":
-        const { data: resourcesData } = await getResources();
-        setResources(resourcesData || []);
-        break;
       case "workbooks":
         const { data: workbooksData } = await getWorkbooks();
         setWorkbooks(workbooksData || []);
@@ -151,15 +141,6 @@ const AdminDashboard = () => {
             toast.success("Service created successfully");
           }
           break;
-        case "resources":
-          if (editingItem) {
-            await updateResource(editingItem.id, formData);
-            toast.success("Resource updated successfully");
-          } else {
-            await createResource({ ...formData, display_order: resources.length + 1 });
-            toast.success("Resource created successfully");
-          }
-          break;
         case "workbooks":
           if (editingItem) {
             await updateWorkbook(editingItem.id, formData);
@@ -196,9 +177,6 @@ const AdminDashboard = () => {
         case "services":
           result = await deleteService(id);
           break;
-        case "resources":
-          result = await deleteResource(id);
-          break;
         case "workbooks":
           result = await deleteWorkbook(id);
           break;
@@ -223,7 +201,6 @@ const AdminDashboard = () => {
 
   const tabs = [
     { id: "services" as TabType, label: "Services", icon: Settings },
-    { id: "resources" as TabType, label: "Resources", icon: FileText },
     { id: "workbooks" as TabType, label: "Workbooks", icon: BookOpen },
     { id: "gallery" as TabType, label: "Gallery", icon: Image },
   ];
@@ -384,44 +361,6 @@ const AdminDashboard = () => {
             </Button>
           </div>
         );
-      case "resources":
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label>Title</Label>
-              <Input
-                value={formData.title || editingItem?.title || ""}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Resource title"
-              />
-            </div>
-            <div>
-              <Label>File URL</Label>
-              <Input
-                value={formData.file_url || editingItem?.file_url || ""}
-                onChange={(e) => setFormData({ ...formData, file_url: e.target.value })}
-                placeholder="/downloads/file.pdf"
-              />
-              <p className="text-xs text-slate-500 mt-1">Or upload a file:</p>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const url = await handleFileUpload(file, "documents");
-                    if (url) setFormData({ ...formData, file_url: url });
-                  }
-                }}
-                className="mt-2 text-sm"
-              />
-            </div>
-            <Button onClick={handleSave} className="w-full bg-[#382467] hover:bg-[#4a3080]" disabled={uploading}>
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Resource
-            </Button>
-          </div>
-        );
       case "workbooks":
         return (
           <div className="space-y-4">
@@ -565,30 +504,6 @@ const AdminDashboard = () => {
                     <Edit2 className="w-4 h-4" />
                   </Button>
                   <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(service.id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      case "resources":
-        return resources.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">No resources yet. Add your first resource!</div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {resources.map((resource) => (
-              <div key={resource.id} className="p-4 flex items-center gap-4 hover:bg-slate-50">
-                <FileText className="w-10 h-10 text-[#382467]" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-slate-800">{resource.title}</h4>
-                  <p className="text-sm text-slate-500">{resource.file_url}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="icon" onClick={() => { setEditingItem(resource); setFormData(resource); }}>
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(resource.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>

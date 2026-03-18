@@ -1,11 +1,36 @@
 "use client"
 
-import React from "react"
-import { motion } from "framer-motion"
+import React, { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import Navigation from "@/components/Navigation"
 import MouseSpark from "@/components/ui/mouse-spark"
+import { sendEmail } from "@/lib/email"
+import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 
 export default function AboutPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get("name") as string
+    const email = formData.get("email") as string
+    const message = formData.get("message") as string
+
+    try {
+      await sendEmail(name, email, message)
+      toast.success("Message sent successfully! We will get back to you soon.")
+      ;(e.target as HTMLFormElement).reset()
+    } catch (error) {
+      toast.error("Failed to send message. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <main className="bg-white min-h-screen">
       <MouseSpark />
@@ -13,16 +38,8 @@ export default function AboutPage() {
 
       {/* HERO */}
       <section
-        className="relative h-[260px] md:h-[320px] flex items-center justify-center overflow-hidden"
-        style={{
-          backgroundImage:
-            "url('https://scribblesense.co.uk/assets/img/slider/slide-01.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
+        className="relative h-[260px] md:h-[320px] flex items-center justify-center overflow-hidden bg-gradient-to-r from-pink-100 via-purple-100 to-cyan-100"
       >
-        <div className="absolute inset-0 bg-black/60" />
 
         <motion.div
           className="relative z-10 text-center px-4"
@@ -30,11 +47,11 @@ export default function AboutPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <p className="text-sm text-slate-100/80 mb-2">Home – About</p>
-          <h1 className="text-3xl md:text-5xl font-semibold text-white mb-2">
+          <p className="text-sm md:text-base text-slate-800/80 mb-2 font-medium">Home – About</p>
+          <h1 className="text-4xl md:text-7xl font-['Fredoka',sans-serif] font-bold text-[#382467] mb-4">
             About Our Journey
           </h1>
-          <p className="text-slate-100/90 max-w-2xl mx-auto text-sm md:text-base">
+          <p className="text-slate-700 max-w-2xl mx-auto text-base md:text-xl font-medium">
             Discover how ScribbleSense supports children with dysgraphia through
             playful, research-backed solutions.
           </p>
@@ -57,7 +74,7 @@ export default function AboutPage() {
                   transition={{ duration: 0.6, ease: "easeOut" }}
                 >
                   <img
-                    src="https://scribblesense.co.uk/assets/img/portfolio/creativeZipp/creative/Untitled-1.jpg"
+                    src="/port06.jpg"
                     alt="ScribbleSense children illustration"
                     className="w-full h-full object-cover"
                   />
@@ -171,6 +188,7 @@ export default function AboutPage() {
 
           {/* Form centered */}
           <motion.form
+            onSubmit={handleFormSubmit}
             className="max-w-2xl mx-auto space-y-4 rounded-2xl border border-slate-200 bg-white/90 shadow-sm p-6 md:p-8"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -186,33 +204,22 @@ export default function AboutPage() {
               ready to help.
             </p>
 
-            <div className="space-y-1">
-              <label
-                htmlFor="comment"
-                className="text-sm font-medium text-slate-700"
-              >
-                Comment
-              </label>
-              <textarea
-                id="comment"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 min-h-[120px]"
-                placeholder="Share your thoughts or questions..."
-              />
-            </div>
-
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1">
                 <label
-                  htmlFor="firstName"
+                  htmlFor="name"
                   className="text-sm font-medium text-slate-700"
                 >
-                  First Name
+                  Name
                 </label>
                 <input
-                  id="firstName"
+                  id="name"
+                  name="name"
                   type="text"
+                  required
+                  disabled={isSubmitting}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-                  placeholder="Enter your first name"
+                  placeholder="Enter your name"
                 />
               </div>
 
@@ -225,51 +232,50 @@ export default function AboutPage() {
                 </label>
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  required
+                  disabled={isSubmitting}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
                   placeholder="Enter your email address"
                 />
               </div>
-
-              <div className="space-y-1 md:col-span-2">
-                <label
-                  htmlFor="website"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Website
-                </label>
-                <input
-                  id="website"
-                  type="url"
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-                  placeholder="Optional: your website"
-                />
-              </div>
             </div>
 
-            <div className="flex items-start gap-2">
-              <input
-                id="remember"
-                type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-pink-500 focus:ring-pink-400"
-              />
+            <div className="space-y-1">
               <label
-                htmlFor="remember"
-                className="text-xs md:text-sm text-slate-700"
+                htmlFor="message"
+                className="text-sm font-medium text-slate-700"
               >
-                Save my name, email and website in this browser for the next
-                time I comment.
+                Message
               </label>
+              <textarea
+                id="message"
+                name="message"
+                required
+                disabled={isSubmitting}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 min-h-[120px] resize-none"
+                placeholder="Share your thoughts or questions..."
+                rows={4}
+              />
             </div>
 
-            <div className="pt-2 flex justify-center">
+            <div className="pt-4 flex justify-center">
               <motion.button
                 type="submit"
+                disabled={isSubmitting}
                 whileHover={{ y: -2, scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center justify-center rounded-full bg-pink-500 px-6 py-2.5 text-sm md:text-base font-semibold text-white shadow-md hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2"
+                className="inline-flex items-center justify-center rounded-full bg-pink-500 px-8 py-3 text-sm md:text-base font-semibold text-white shadow-md hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed w-full md:w-auto"
               >
-                Submit
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Details"
+                )}
               </motion.button>
             </div>
           </motion.form>
