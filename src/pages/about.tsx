@@ -4,9 +4,11 @@ import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Navigation from "@/components/Navigation"
 import MouseSpark from "@/components/ui/mouse-spark"
+import FAQSection from "@/components/FAQSection"
 import { sendEmail } from "@/lib/email"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
+import SEOHelmet from "@/components/SEOHelmet"
 
 export default function AboutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,6 +35,7 @@ export default function AboutPage() {
 
   return (
     <main className="bg-white min-h-screen">
+      <SEOHelmet page="about" />
       <MouseSpark />
       <Navigation />
 
@@ -281,6 +284,11 @@ export default function AboutPage() {
           </motion.form>
         </div>
       </section>
+      <FAQSection
+        page="about"
+        title="About ScribbleSense FAQs"
+        subtitle="Learn more about our journey, vision, and what makes our approach different."
+      />
     </main>
   )
 }

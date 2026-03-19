@@ -13,6 +13,9 @@ import { toast } from "sonner"
 import { Document, Page, pdfjs } from "react-pdf"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 import "react-pdf/dist/Page/TextLayer.css"
+import FAQSection from "@/components/FAQSection"
+import SEOHelmet from "@/components/SEOHelmet"
+
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 
@@ -212,6 +215,7 @@ export default function ResourcesPage() {
 
   return (
     <main className="bg-white min-h-screen">
+      <SEOHelmet page="resources" />
       <MouseSpark />
       <Navigation />
       {/* Hero / banner */}
@@ -240,6 +244,12 @@ export default function ResourcesPage() {
         {/* Torn edge transition into white */}
         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
       </section>
+
+       <FAQSection
+        page="resources"
+        title="Resources FAQ"
+        subtitle="Guidance on downloads, workbooks, and how to use these materials at home."
+      />
 
       {/* Learning Materials list */}
       {/* <section className="py-16 md:py-24">

@@ -25,6 +25,7 @@ export default function Navigation() {
     { to: "/about", label: "Our Story" },
     { to: "/solutions", label: "Solutions" },
     { to: "/resources", label: "Resources" },
+    { to: "/blog", label: "Blog" },
     { to: "/contact", label: "Contact Us" },
   ];
 

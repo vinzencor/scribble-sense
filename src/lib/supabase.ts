@@ -42,6 +42,38 @@ export interface GalleryImage {
   display_order: number;
   created_at: string;
 }
+export interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  page: "home" | "about" | "services" | "resources" | "contact" | "all" | string;
+  display_order: number;
+  created_at: string;
+}
+
+export interface Blog {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  featured_image_url: string;
+  author: string;
+  published_date: string;
+  display_order: number;
+  created_at: string;
+}
+
+export interface SEOSetting {
+  id: string;
+  page: string;
+  meta_title: string;
+  meta_description: string;
+  meta_keywords: string;
+  og_image_url: string;
+  created_at: string;
+  updated_at: string;
+}
 
 // Helper functions for authentication
 export const signIn = async (email: string, password: string) => {
@@ -187,3 +219,98 @@ export const deleteFile = async (bucket: string, path: string) => {
   return { error };
 };
 
+export const getFAQs = async (page?: string) => {
+  let query = supabase.from('faqs').select('*');
+  if (page) {
+    query = query.in('page', [page, 'all']);
+  }
+  const { data, error } = await query.order('display_order', { ascending: true });
+  return { data, error };
+};
+
+export const createFAQ = async (faq: Omit<FAQ, 'id' | 'created_at'>) => {
+  const { data, error } = await supabase.from('faqs').insert([faq]).select();
+  return { data, error };
+};
+
+export const updateFAQ = async (id: string, faq: Partial<FAQ>) => {
+  const { data, error } = await supabase.from('faqs').update(faq).eq('id', id).select();
+  return { data, error };
+};
+
+export const deleteFAQ = async (id: string) => {
+  const { error } = await supabase.from('faqs').delete().eq('id', id);
+  return { error };
+};
+
+// Blogs CRUD
+export const getBlogs = async () => {
+  const { data, error } = await supabase
+    .from('blogs')
+    .select('*')
+    .order('display_order', { ascending: true })
+    .order('published_date', { ascending: false });
+  return { data, error };
+};
+
+export const getBlogBySlug = async (slug: string) => {
+  const { data, error } = await supabase
+    .from('blogs')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+  return { data, error };
+};
+
+export const createBlog = async (blog: Omit<Blog, 'id' | 'created_at'>) => {
+  const { data, error } = await supabase.from('blogs').insert([blog]).select();
+  return { data, error };
+};
+
+export const updateBlog = async (id: string, blog: Partial<Blog>) => {
+  const { data, error } = await supabase.from('blogs').update(blog).eq('id', id).select();
+  return { data, error };
+};
+
+export const deleteBlog = async (id: string) => {
+  const { error } = await supabase.from('blogs').delete().eq('id', id);
+  return { error };
+};
+
+// SEO settings
+export const getSEOSettings = async (page?: string) => {
+  let query = supabase.from('seo_settings').select('*');
+  if (page) {
+    query = query.eq('page', page).maybeSingle();
+  }
+  const { data, error } = await query;
+  return { data, error };
+};
+
+export const updateSEOSettings = async (page: string, settings: Partial<SEOSetting>) => {
+  const { data: existing } = await supabase
+    .from('seo_settings')
+    .select('id')
+    .eq('page', page)
+    .maybeSingle();
+
+  if (existing?.id) {
+    const { data, error } = await supabase
+      .from('seo_settings')
+      .update({ ...settings, page })
+      .eq('id', existing.id)
+      .select();
+    return { data, error };
+  }
+
+  const { data, error } = await supabase
+    .from('seo_settings')
+    .insert([{ ...settings, page }])
+    .select();
+  return { data, error };
+};
+
+export const deleteSEOSettings = async (id: string) => {
+  const { error } = await supabase.from('seo_settings').delete().eq('id', id);
+  return { error };
+};

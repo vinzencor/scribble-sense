@@ -23,6 +23,9 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import FAQSection from "@/components/FAQSection";
+import SEOHelmet from "@/components/SEOHelmet";
+
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -130,6 +133,7 @@ const Index = () => {
 
   return (
     <div className={`min-h-screen ${lightThemeBg}`}>
+      <SEOHelmet page="home" />
       <MouseSpark />
       <Navigation />
 
@@ -263,6 +267,11 @@ const Index = () => {
           </div>
         </div>
       </section>
+      <FAQSection
+        page="home"
+        title="Questions Parents Ask Most"
+        subtitle="Quick answers about our support programs, assessments, and resources."
+      />
       {/* About ScribbleSense Section */}
       <section
         id="about"

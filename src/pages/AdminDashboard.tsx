@@ -8,6 +8,10 @@ import {
   createService,
   updateService,
   deleteService,
+  getResources,
+  createResource,
+  updateResource,
+  deleteResource,
   getWorkbooks,
   createWorkbook,
   updateWorkbook,
@@ -16,10 +20,25 @@ import {
   createGalleryImage,
   updateGalleryImage,
   deleteGalleryImage,
+  getFAQs,
+  createFAQ,
+  updateFAQ,
+  deleteFAQ,
+  getBlogs,
+  createBlog,
+  updateBlog,
+  deleteBlog,
+  getSEOSettings,
+  updateSEOSettings,
+  deleteSEOSettings,
   uploadFile,
   Service,
+  Resource,
   Workbook,
   GalleryImage,
+  FAQ,
+  Blog,
+  SEOSetting,
 } from "@/lib/supabase";
 import {
   LayoutDashboard,
@@ -27,13 +46,15 @@ import {
   Image,
   BookOpen,
   FileText,
+  HelpCircle,
+  Newspaper,
+  Search,
   LogOut,
   Plus,
   Trash2,
   Edit2,
   Save,
   X,
-  Upload,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,8 +62,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import RichTextEditor from "@/components/RichTextEditor";
 
-type TabType = "services" | "resources" | "workbooks" | "gallery";
+type TabType = "services" | "resources" | "workbooks" | "gallery" | "faqs" | "blogs" | "seo";
 
 const AdminDashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -52,8 +74,12 @@ const AdminDashboard = () => {
 
   // Data states
   const [services, setServices] = useState<Service[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [workbooks, setWorkbooks] = useState<Workbook[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [seoSettings, setSeoSettings] = useState<SEOSetting[]>([]);
 
   // Form states
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -98,6 +124,10 @@ const AdminDashboard = () => {
         const { data: servicesData } = await getServices();
         setServices(servicesData || []);
         break;
+      case "resources":
+        const { data: resourcesData } = await getResources();
+        setResources(resourcesData || []);
+        break;
       case "workbooks":
         const { data: workbooksData } = await getWorkbooks();
         setWorkbooks(workbooksData || []);
@@ -105,6 +135,18 @@ const AdminDashboard = () => {
       case "gallery":
         const { data: galleryData } = await getGalleryImages();
         setGalleryImages(galleryData || []);
+        break;
+      case "faqs":
+        const { data: faqData } = await getFAQs();
+        setFaqs(faqData || []);
+        break;
+      case "blogs":
+        const { data: blogData } = await getBlogs();
+        setBlogs(blogData || []);
+        break;
+      case "seo":
+        const { data: seoData } = await getSEOSettings();
+        setSeoSettings(seoData || []);
         break;
     }
   };
@@ -129,6 +171,14 @@ const AdminDashboard = () => {
     return data?.publicUrl;
   };
 
+  const slugify = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+
   const handleSave = async () => {
     try {
       switch (activeTab) {
@@ -139,6 +189,15 @@ const AdminDashboard = () => {
           } else {
             await createService({ ...formData, display_order: services.length + 1 });
             toast.success("Service created successfully");
+          }
+          break;
+        case "resources":
+          if (editingItem) {
+            await updateResource(editingItem.id, formData);
+            toast.success("Resource updated successfully");
+          } else {
+            await createResource({ ...formData, display_order: resources.length + 1 });
+            toast.success("Resource created successfully");
           }
           break;
         case "workbooks":
@@ -159,6 +218,41 @@ const AdminDashboard = () => {
             toast.success("Image added successfully");
           }
           break;
+        case "faqs":
+          if (editingItem) {
+            await updateFAQ(editingItem.id, formData);
+            toast.success("FAQ updated successfully");
+          } else {
+            await createFAQ({ ...formData, display_order: faqs.length + 1 });
+            toast.success("FAQ created successfully");
+          }
+          break;
+        case "blogs":
+          if (editingItem) {
+            const payload = { ...formData };
+            if (!payload.slug && payload.title) {
+              payload.slug = slugify(payload.title);
+            }
+            await updateBlog(editingItem.id, payload);
+            toast.success("Blog updated successfully");
+          } else {
+            const slug = formData.slug || slugify(formData.title || "");
+            await createBlog({
+              ...formData,
+              slug,
+              display_order: blogs.length + 1,
+            });
+            toast.success("Blog created successfully");
+          }
+          break;
+        case "seo":
+          if (!formData.page) {
+            toast.error("Page identifier is required");
+            return;
+          }
+          await updateSEOSettings(formData.page, formData);
+          toast.success("SEO settings updated successfully");
+          break;
       }
       setEditingItem(null);
       setIsAdding(false);
@@ -177,11 +271,23 @@ const AdminDashboard = () => {
         case "services":
           result = await deleteService(id);
           break;
+        case "resources":
+          result = await deleteResource(id);
+          break;
         case "workbooks":
           result = await deleteWorkbook(id);
           break;
         case "gallery":
           result = await deleteGalleryImage(id);
+          break;
+        case "faqs":
+          result = await deleteFAQ(id);
+          break;
+        case "blogs":
+          result = await deleteBlog(id);
+          break;
+        case "seo":
+          result = await deleteSEOSettings(id);
           break;
       }
       
@@ -201,8 +307,12 @@ const AdminDashboard = () => {
 
   const tabs = [
     { id: "services" as TabType, label: "Services", icon: Settings },
+    { id: "resources" as TabType, label: "Resources", icon: FileText },
     { id: "workbooks" as TabType, label: "Workbooks", icon: BookOpen },
     { id: "gallery" as TabType, label: "Gallery", icon: Image },
+    { id: "faqs" as TabType, label: "FAQs", icon: HelpCircle },
+    { id: "blogs" as TabType, label: "Blogs", icon: Newspaper },
+    { id: "seo" as TabType, label: "SEO", icon: Search },
   ];
 
   if (loading) {
@@ -361,6 +471,44 @@ const AdminDashboard = () => {
             </Button>
           </div>
         );
+      case "resources":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Title</Label>
+              <Input
+                value={formData.title || editingItem?.title || ""}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Resource title"
+              />
+            </div>
+            <div>
+              <Label>File URL</Label>
+              <Input
+                value={formData.file_url || editingItem?.file_url || ""}
+                onChange={(e) => setFormData({ ...formData, file_url: e.target.value })}
+                placeholder="/downloads/file.pdf"
+              />
+              <p className="text-xs text-slate-500 mt-1">Or upload a file:</p>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const url = await handleFileUpload(file, "documents");
+                    if (url) setFormData({ ...formData, file_url: url });
+                  }
+                }}
+                className="mt-2 text-sm"
+              />
+            </div>
+            <Button onClick={handleSave} className="w-full bg-[#382467] hover:bg-[#4a3080]" disabled={uploading}>
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Resource
+            </Button>
+          </div>
+        );
       case "workbooks":
         return (
           <div className="space-y-4">
@@ -482,6 +630,176 @@ const AdminDashboard = () => {
             </Button>
           </div>
         );
+      case "faqs":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Question</Label>
+              <Input
+                value={formData.question || editingItem?.question || ""}
+                onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+                placeholder="FAQ question"
+              />
+            </div>
+            <div>
+              <Label>Answer</Label>
+              <Textarea
+                value={formData.answer || editingItem?.answer || ""}
+                onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
+                placeholder="FAQ answer"
+                rows={4}
+              />
+            </div>
+            <div>
+              <Label>Page</Label>
+              <select
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                value={formData.page || editingItem?.page || "home"}
+                onChange={(e) => setFormData({ ...formData, page: e.target.value })}
+              >
+                <option value="home">Home</option>
+                <option value="about">About</option>
+                <option value="services">Services</option>
+                <option value="resources">Resources</option>
+                <option value="contact">Contact</option>
+                <option value="all">All Pages</option>
+              </select>
+            </div>
+            <Button onClick={handleSave} className="w-full bg-[#382467] hover:bg-[#4a3080]">
+              <Save className="w-4 h-4 mr-2" />
+              Save FAQ
+            </Button>
+          </div>
+        );
+      case "blogs":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Title</Label>
+              <Input
+                value={formData.title || editingItem?.title || ""}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Blog title"
+              />
+            </div>
+            <div>
+              <Label>Slug</Label>
+              <Input
+                value={formData.slug || editingItem?.slug || ""}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                placeholder="blog-post-slug"
+              />
+            </div>
+            <div>
+              <Label>Excerpt</Label>
+              <Textarea
+                value={formData.excerpt || editingItem?.excerpt || ""}
+                onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                placeholder="Short summary"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label>Author</Label>
+              <Input
+                value={formData.author || editingItem?.author || ""}
+                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                placeholder="Author name"
+              />
+            </div>
+            <div>
+              <Label>Published Date</Label>
+              <Input
+                type="date"
+                value={(formData.published_date || editingItem?.published_date || "").toString().slice(0, 10)}
+                onChange={(e) => setFormData({ ...formData, published_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Featured Image URL</Label>
+              <Input
+                value={formData.featured_image_url || editingItem?.featured_image_url || ""}
+                onChange={(e) => setFormData({ ...formData, featured_image_url: e.target.value })}
+                placeholder="https://..."
+              />
+              <p className="text-xs text-slate-500 mt-1">Or upload an image:</p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const url = await handleFileUpload(file, "blog-images");
+                    if (url) setFormData({ ...formData, featured_image_url: url });
+                  }
+                }}
+                className="mt-2 text-sm"
+              />
+            </div>
+            <div>
+              <Label>Content</Label>
+              <RichTextEditor
+                value={formData.content || editingItem?.content || ""}
+                onChange={(value) => setFormData({ ...formData, content: value })}
+                placeholder="Write your blog content here..."
+              />
+            </div>
+            <Button onClick={handleSave} className="w-full bg-[#382467] hover:bg-[#4a3080]" disabled={uploading}>
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Blog
+            </Button>
+          </div>
+        );
+      case "seo":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Page Identifier</Label>
+              <Input
+                value={formData.page || editingItem?.page || ""}
+                onChange={(e) => setFormData({ ...formData, page: e.target.value })}
+                placeholder="home, about, services, blog, blog-post"
+              />
+            </div>
+            <div>
+              <Label>Meta Title</Label>
+              <Input
+                value={formData.meta_title || editingItem?.meta_title || ""}
+                onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                placeholder="Page title"
+              />
+            </div>
+            <div>
+              <Label>Meta Description</Label>
+              <Textarea
+                value={formData.meta_description || editingItem?.meta_description || ""}
+                onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                placeholder="Short description"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label>Meta Keywords</Label>
+              <Input
+                value={formData.meta_keywords || editingItem?.meta_keywords || ""}
+                onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
+                placeholder="keyword1, keyword2"
+              />
+            </div>
+            <div>
+              <Label>OG Image URL</Label>
+              <Input
+                value={formData.og_image_url || editingItem?.og_image_url || ""}
+                onChange={(e) => setFormData({ ...formData, og_image_url: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+            <Button onClick={handleSave} className="w-full bg-[#382467] hover:bg-[#4a3080]">
+              <Save className="w-4 h-4 mr-2" />
+              Save SEO Settings
+            </Button>
+          </div>
+        );
     }
   }
 
@@ -504,6 +822,30 @@ const AdminDashboard = () => {
                     <Edit2 className="w-4 h-4" />
                   </Button>
                   <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(service.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case "resources":
+        return resources.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">No resources yet. Add your first resource!</div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {resources.map((resource) => (
+              <div key={resource.id} className="p-4 flex items-center gap-4 hover:bg-slate-50">
+                <FileText className="w-10 h-10 text-[#382467]" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-slate-800">{resource.title}</h4>
+                  <p className="text-sm text-slate-500">{resource.file_url}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="icon" onClick={() => { setEditingItem(resource); setFormData(resource); }}>
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(resource.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -568,6 +910,81 @@ const AdminDashboard = () => {
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
                   <p className="text-white text-xs truncate">{image.title}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case "faqs":
+        return faqs.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">No FAQs yet. Add your first FAQ!</div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {faqs.map((faq) => (
+              <div key={faq.id} className="p-4 flex items-center gap-4 hover:bg-slate-50">
+                <HelpCircle className="w-10 h-10 text-[#382467]" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-slate-800">{faq.question}</h4>
+                  <p className="text-xs text-slate-500">Page: {faq.page}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="icon" onClick={() => { setEditingItem(faq); setFormData(faq); }}>
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(faq.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case "blogs":
+        return blogs.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">No blog posts yet. Add your first blog!</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            {blogs.map((blog) => (
+              <div key={blog.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                {blog.featured_image_url ? (
+                  <img src={blog.featured_image_url} alt={blog.title} className="w-full h-40 object-cover" />
+                ) : null}
+                <div className="p-4">
+                  <h4 className="font-semibold text-slate-800">{blog.title}</h4>
+                  <p className="text-sm text-slate-500 line-clamp-2">{blog.excerpt}</p>
+                  <p className="text-xs text-slate-400 mt-2">Slug: {blog.slug}</p>
+                  <div className="flex gap-2 mt-3">
+                    <Button variant="outline" size="sm" onClick={() => { setEditingItem(blog); setFormData(blog); }}>
+                      <Edit2 className="w-4 h-4 mr-1" /> Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(blog.id)}>
+                      <Trash2 className="w-4 h-4 mr-1" /> Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case "seo":
+        return seoSettings.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">No SEO settings yet. Add your first entry!</div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {seoSettings.map((setting) => (
+              <div key={setting.id} className="p-4 flex items-center gap-4 hover:bg-slate-50">
+                <Search className="w-10 h-10 text-[#382467]" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-slate-800">{setting.page}</h4>
+                  <p className="text-sm text-slate-500 line-clamp-1">{setting.meta_title}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="icon" onClick={() => { setEditingItem(setting); setFormData(setting); }}>
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(setting.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             ))}

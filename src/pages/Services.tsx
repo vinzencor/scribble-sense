@@ -6,6 +6,9 @@ import Navigation from "@/components/Navigation"
 import MouseSpark from "@/components/ui/mouse-spark"
 import { getServices, Service as SupabaseService } from "@/lib/supabase"
 import { Loader2 } from "lucide-react"
+import FAQSection from "@/components/FAQSection"
+import SEOHelmet from "@/components/SEOHelmet"
+
 
 type Service = {
   id: string | number
@@ -124,6 +127,7 @@ export default function ServicesPage() {
 
   return (
     <main className="bg-white min-h-screen">
+      <SEOHelmet page="services" />
       <MouseSpark />
       <Navigation />
       {/* Hero / banner section */}
@@ -189,6 +193,11 @@ export default function ServicesPage() {
           )}
         </div>
       </section>
+      <FAQSection
+        page="services"
+        title="Services FAQ"
+        subtitle="Common questions about our programs, assessments, and support plans."
+      />
     </main>
   )
 }

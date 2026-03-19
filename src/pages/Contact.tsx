@@ -3,11 +3,14 @@ import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import MouseSpark from "@/components/ui/mouse-spark";
 import CloudWatchForm from "@/components/CloudWatchForm";
+import FAQSection from "@/components/FAQSection";
 import { Mail, MapPin, Phone } from "lucide-react";
+import SEOHelmet from "@/components/SEOHelmet";
 
 const Contact = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEOHelmet page="contact" />
       <MouseSpark />
       <Navigation />
 
@@ -103,6 +106,11 @@ const Contact = () => {
           </div>
         </div>
       </section>
+      <FAQSection
+        page="contact"
+        title="Contact FAQ"
+        subtitle="Answers about response times, consultations, and getting started."
+      />
     </div>
   );
 };
