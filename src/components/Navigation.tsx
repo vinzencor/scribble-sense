@@ -20,11 +20,23 @@ export default function Navigation() {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-  const links = [
+  type NavigationLink = {
+    label: string;
+    to?: string;
+    href?: string;
+    external?: boolean;
+  };
+
+  const links: NavigationLink[] = [
     { to: "/", label: "Home" },
     { to: "/about", label: "Our Story" },
     { to: "/solutions", label: "Solutions" },
     { to: "/resources", label: "Resources" },
+    {
+      href: "https://subscription.scribblesense.co.uk/",
+      label: "Pricing",
+      external: true,
+    },
     { to: "/blog", label: "Blog" },
     { to: "/contact", label: "Contact Us" },
   ];
@@ -80,16 +92,28 @@ export default function Navigation() {
             }`}
             aria-hidden={!showDesktopNav}
           >
-              {links.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-                  activeClassName="text-primary font-semibold"
-                >
-                  {link.label}
-                </NavLink>
-              ))}
+              {links.map((link) =>
+                link.external ? (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <NavLink
+                    key={link.to}
+                    to={link.to!}
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                    activeClassName="text-primary font-semibold"
+                  >
+                    {link.label}
+                  </NavLink>
+                )
+              )}
 
               {/* Join ScribbleSense CTA (desktop) */}
               <DialogTrigger asChild>
@@ -117,16 +141,28 @@ export default function Navigation() {
               </SheetTrigger>
               <SheetContent>
                 <div className="flex flex-col gap-4 mt-8">
-                  {links.map((link) => (
-                    <NavLink
-                      key={link.to}
-                      to={link.to}
-                      className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-                      activeClassName="text-primary font-bold"
-                    >
-                      {link.label}
-                    </NavLink>
-                  ))}
+                  {links.map((link) =>
+                    link.external ? (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <NavLink
+                        key={link.to}
+                        to={link.to!}
+                        className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                        activeClassName="text-primary font-bold"
+                      >
+                        {link.label}
+                      </NavLink>
+                    )
+                  )}
 
                   <DialogTrigger asChild>
                     <Button className="mt-4 rounded-full font-semibold">
